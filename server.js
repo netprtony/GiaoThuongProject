@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const authRoutes = require('./routes/auth');
-const dealRoutes = require('./routes/deal');  // Import deal route
+const dealRoutes = require('./routes/deal');  
 require('dotenv').config();
 const app = express();
 // Kết nối MongoDB

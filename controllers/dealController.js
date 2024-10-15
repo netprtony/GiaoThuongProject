@@ -57,3 +57,9 @@ exports.commentDeal = async (req, res) => {
     res.status(500).json({ message: 'Lỗi khi bình luận vào sự kiện', error });
   }
 };
+
+
+module.exports = {
+  rateDeal: exports.rateDeal,
+  commentDeal: exports.commentDeal,
+};

@@ -1,12 +1,9 @@
 const express = require('express');
-const { rateDeal, commentDeal } = require('../controllers/dealController');
-const verifyToken = require('../middleware/authMiddleware');
 const router = express.Router();
+const dealController = require('../controllers/dealController');
 
-// Route để thêm đánh giá sao
-router.post('/:id/rate', verifyToken, rateDeal);
-
-// Route để thêm bình luận vào deal
-router.post('/:id/comment', verifyToken, commentDeal);
+// Đảm bảo rằng bạn đang sử dụng đúng các hàm từ dealController
+router.post('/:id/rate', dealController.rateDeal);
+router.post('/:id/comment', dealController.commentDeal);
 
 module.exports = router;
