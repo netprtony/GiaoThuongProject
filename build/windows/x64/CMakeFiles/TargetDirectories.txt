@@ -1,0 +1,10 @@
+E:/DuAnKetNoiGiaoThuong/flutter/giaothuong/build/windows/x64/CMakeFiles/INSTALL.dir
+E:/DuAnKetNoiGiaoThuong/flutter/giaothuong/build/windows/x64/CMakeFiles/ALL_BUILD.dir
+E:/DuAnKetNoiGiaoThuong/flutter/giaothuong/build/windows/x64/CMakeFiles/ZERO_CHECK.dir
+E:/DuAnKetNoiGiaoThuong/flutter/giaothuong/build/windows/x64/flutter/CMakeFiles/flutter_wrapper_plugin.dir
+E:/DuAnKetNoiGiaoThuong/flutter/giaothuong/build/windows/x64/flutter/CMakeFiles/flutter_wrapper_app.dir
+E:/DuAnKetNoiGiaoThuong/flutter/giaothuong/build/windows/x64/flutter/CMakeFiles/flutter_assemble.dir
+E:/DuAnKetNoiGiaoThuong/flutter/giaothuong/build/windows/x64/flutter/CMakeFiles/INSTALL.dir
+E:/DuAnKetNoiGiaoThuong/flutter/giaothuong/build/windows/x64/runner/CMakeFiles/giaothuong.dir
+E:/DuAnKetNoiGiaoThuong/flutter/giaothuong/build/windows/x64/runner/CMakeFiles/INSTALL.dir
+E:/DuAnKetNoiGiaoThuong/flutter/giaothuong/build/windows/x64/runner/CMakeFiles/ALL_BUILD.dir
