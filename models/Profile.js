@@ -17,5 +17,4 @@ const profileSchema = new mongoose.Schema({
   timestamps: true, // Tự động thêm createdAt và updatedAt
 });
 
-const Profile = mongoose.model('Profile', profileSchema);
-module.exports = Profile;
+module.exports = mongoose.model('Profile', profileSchema);

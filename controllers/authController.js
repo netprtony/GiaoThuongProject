@@ -12,11 +12,15 @@ exports.login = async (req, res) => {
       if (!user) {
         return res.status(401).json({ message: 'Tài khoản không tồn tại' });
       }
-  
+      
       const isMatch = await bcrypt.compare(password, user.password);
+      console.log('Mật khẩu nhập vào:', password);
+      console.log('Mật khẩu lưu trong DB:', user.password);
+      
       if (!isMatch) {
-        return res.status(401).json({ message: 'Mật khẩu không đúng' });
+        return res.status(401).json({ message: 'Mật khẩu không đúng', enteredPassword: password, storedPassword: user.password });
       }
+    
   
       const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, { expiresIn: '1h' });
   
@@ -24,7 +28,7 @@ exports.login = async (req, res) => {
     } catch (error) {
       res.status(500).json({ message: 'Đăng nhập thất bại', error });
     }
-  };
+};
 
 // Đăng ký
 exports.register = async (req, res) => {
@@ -35,17 +39,14 @@ exports.register = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ message: 'Tài khoản đã tồn tại' });
     }
+    
+    const salt = await bcrypt.genSalt(10); // Tạo salt
+    const hashedPassword = await bcrypt.hash(password, salt); // Băm mật khẩu
 
     const newUser = new User({
       username,
-      password,
-      name,
-      gender,
-      dob,
-      phone,
-      company,
+      password: hashedPassword, // Lưu mật khẩu đã băm
       email,
-      address,
     });
     await newUser.save();
 
@@ -59,8 +60,8 @@ exports.register = async (req, res) => {
       email,
       address,
     });
-    await newProfile.save();
 
+    await newProfile.save();
     newUser.profile = newProfile._id;
     await newUser.save();
 
@@ -73,3 +74,6 @@ exports.register = async (req, res) => {
     res.status(500).json({ message: 'Đăng ký thất bại', error: error.message });
   }
 };
+
+
+
