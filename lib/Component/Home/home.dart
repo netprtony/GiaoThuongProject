@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:giaothuong/Component/Settings/settings_screen.dart' as Settings;
+import 'package:giaothuong/Component/User/deal_service.dart';
 
 class Home extends StatefulWidget {
   final String role;
@@ -31,9 +32,81 @@ class _HomeState extends State<Home> {
     },
   ];
 
+  DealService dealService = DealService();
+  List<dynamic> deals = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDeals();
+  }
+
+  void _fetchDeals() async {
+    List<dynamic> fetchedDeals = await dealService.getDeals();
+    setState(() {
+      deals = fetchedDeals;
+    });
+  }
+
+  void _addDeal() async {
+    bool success = await dealService.addDeal(
+      'New Deal',
+      'This is a new deal',
+      100.0,
+      'Some Company',
+    );
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Deal added successfully')),
+      );
+      _fetchDeals();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to add deal')),
+      );
+    }
+  }
+
+  void _updateDeal(String dealId) async {
+    bool success = await dealService.updateDeal(
+      dealId,
+      'Updated Deal',
+      'Updated description',
+      150.0,
+      'Updated Company',
+    );
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Deal updated successfully')),
+      );
+      _fetchDeals();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to update deal')),
+      );
+    }
+  }
+
+  void _deleteDeal(String dealId) async {
+    bool success = await dealService.deleteDeal(dealId);
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Deal deleted successfully')),
+      );
+      _fetchDeals();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to delete deal')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Deal Management'),
+      ),
       body: Stack(
         children: [
           // Gradient background
@@ -169,21 +242,7 @@ class _HomeState extends State<Home> {
                                       ),
                                     ],
                                   ),
-                                  /* child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: const [
-                                      Text(
-                                        'Tổng quan trạng thái',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      // Thêm nội dung cho tổng quan trạng thái nếu cần
-                                    ],
-                                  ),*/
-                                ), 
+                                ),
                               ),
                             ],
                           ),
@@ -196,6 +255,10 @@ class _HomeState extends State<Home> {
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addDeal,
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -279,11 +342,10 @@ class _HomeState extends State<Home> {
         elevation: 5,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-        padding: const EdgeInsets.symmetric(vertical: 22),
+        padding: const EdgeInsets.symmetric(vertical: 15),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),
-        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
       ),
     );
   }

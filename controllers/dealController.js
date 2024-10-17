@@ -1,5 +1,30 @@
 const Deal = require('../models/Deal');
 
+// Tạo deal mới
+exports.createDeal = async (req, res) => {
+  const { title, content } = req.body;
+
+  // Kiểm tra dữ liệu đầu vào
+  if (!title || !content) {
+    return res.status(400).json({ message: 'Tiêu đề và nội dung không được để trống' });
+  }
+
+  try {
+    // Tạo deal mới
+    const newDeal = new Deal({
+      title,
+      content,
+    });
+
+    // Lưu deal vào cơ sở dữ liệu
+    await newDeal.save();
+
+    res.status(201).json({ message: 'Deal được tạo thành công', deal: newDeal });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi khi tạo deal', error });
+  }
+};
+
 // Thêm đánh giá sao cho deal
 exports.rateDeal = async (req, res) => {
   const dealId = req.params.id;
