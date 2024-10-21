@@ -77,8 +77,8 @@ class LoginState extends State<Login> {
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color.fromARGB(255, 197, 216, 236),
-                  Color.fromARGB(255, 25, 117, 215),
+                  Color.fromARGB(255, 255, 204, 204), // Màu cam nhạt
+                  Color.fromARGB(255, 255, 140, 0), // Màu cam
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -103,9 +103,9 @@ class LoginState extends State<Login> {
                   ClipOval(
                     child: Image.asset(
                       'assets/images/logo.png',
-                      width: 100.0, // chiều rộng
-                      height: 100.0, // chiều cao
-                      fit: BoxFit.cover, // phương thức fit để đảm bảo hình ảnh không bị biến dạng
+                      width: 100.0,
+                      height: 100.0,
+                      fit: BoxFit.cover,
                     ),
                   )
                 ],
@@ -171,7 +171,7 @@ class LoginState extends State<Login> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30.0),
                       ),
-                      backgroundColor: const Color.fromARGB(255, 0, 92, 250),
+                      backgroundColor: const Color.fromARGB(255, 255, 140, 0), // Màu cam
                       foregroundColor: const Color.fromARGB(255, 8, 8, 8),
                     ),
                     child: const Text('Đăng nhập'),

@@ -1,90 +1,125 @@
 const Deal = require('../models/Deal');
 
-// Tạo deal mới
+
 exports.createDeal = async (req, res) => {
-  const { title, content } = req.body;
+  const { title, content, price, company } = req.body;
+  const userId = req.userId; // Lấy userId từ middleware
 
-  // Kiểm tra dữ liệu đầu vào
-  if (!title || !content) {
-    return res.status(400).json({ message: 'Tiêu đề và nội dung không được để trống' });
-  }
-
+  // Tiến hành tạo deal mới
   try {
-    // Tạo deal mới
     const newDeal = new Deal({
       title,
       content,
+      price,
+      company,
+      createdBy: userId // Lưu thông tin người tạo
     });
 
-    // Lưu deal vào cơ sở dữ liệu
     await newDeal.save();
-
-    res.status(201).json({ message: 'Deal được tạo thành công', deal: newDeal });
+    res.status(201).json({ message: 'Deal đã được tạo thành công', deal: newDeal });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi khi tạo deal', error });
+    res.status(500).json({ message: 'Tạo deal thất bại', error: error.message });
   }
 };
 
-// Thêm đánh giá sao cho deal
-exports.rateDeal = async (req, res) => {
-  const dealId = req.params.id;
-  const { rating } = req.body;
 
-  // Kiểm tra xem rating có hợp lệ không
-  if (!rating || rating < 1 || rating > 5) {
-    return res.status(400).json({ message: 'Đánh giá phải nằm trong khoảng từ 1 đến 5 sao' });
+// Cập nhật deal
+exports.updateDeal = async (req, res) => {
+  const dealId = req.params.dealId; // Lấy dealId từ tham số URL
+  const { title, content, price, company } = req.body;
+
+  try {
+    const deal = await Deal.findByIdAndUpdate(dealId, { title, content, price, company }, { new: true });
+    if (!deal) {
+      return res.status(404).json({ message: 'Deal not found' });
+    }
+    res.status(200).json(deal);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error updating deal' });
   }
+};
+
+// Xóa deal
+exports.deleteDeal = async (req, res) => {
+  const dealId = req.params.dealId; // Lấy dealId từ tham số URL
+
+  try {
+    const deal = await Deal.findByIdAndDelete(dealId);
+    if (!deal) {
+      return res.status(404).json({ message: 'Deal not found' });
+    }
+    res.status(200).json({ message: 'Deal deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error deleting deal' });
+  }
+};
+
+// Lấy danh sách các deal
+exports.getDeals = async (req, res) => {
+  try {
+    const deals = await Deal.find();
+    res.status(200).json(deals);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error retrieving deals' });
+  }
+};
+
+// Thêm bình luận
+exports.addComment = async (req, res) => {
+  const dealId = req.params.dealId;
+  const userId = req.userId; 
+  const { content } = req.body; 
 
   try {
     const deal = await Deal.findById(dealId);
     if (!deal) {
-      return res.status(404).json({ message: 'Không tìm thấy deal' });
+      return res.status(404).json({ message: 'Deal not found' });
     }
 
-    // Kiểm tra xem người dùng đã đánh giá trước đó chưa
-    const existingRating = deal.starRatings.find(r => r.userId.equals(req.user.userId));
+    // Thêm bình luận mới vào danh sách comments
+    deal.comments.push({ userId, content });
+    await deal.save();
+
+    res.status(201).json({ message: 'Comment added successfully', deal });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error adding comment' });
+  }
+};
+
+
+
+// Thêm đánh giá
+exports.addRating = async (req, res) => {
+  const dealId = req.params.dealId;
+  const userId = req.userId; 
+  const { rating } = req.body; 
+
+  try {
+    const deal = await Deal.findById(dealId);
+    if (!deal) {
+      return res.status(404).json({ message: 'Deal not found' });
+    }
+
+    // Kiểm tra nếu người dùng đã đánh giá trước đó
+    const existingRating = deal.starRatings.find(r => r.userId.toString() === userId);
     if (existingRating) {
-      // Cập nhật đánh giá nếu đã tồn tại
+      // Nếu đã có đánh giá, cập nhật rating mới
       existingRating.rating = rating;
     } else {
-      // Thêm đánh giá mới
-      deal.starRatings.push({ userId: req.user.userId, rating });
+      // Nếu chưa có đánh giá, thêm đánh giá mới
+      deal.starRatings.push({ userId, rating });
     }
 
     await deal.save();
-    res.status(200).json({ message: 'Đánh giá thành công', starRatings: deal.starRatings });
+    res.status(200).json({ message: 'Rating added successfully', deal });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi khi đánh giá deal', error });
-  }
-};
-
-// Thêm bình luận cho deal
-exports.commentDeal = async (req, res) => {
-  const dealId = req.params.id;
-  const { content } = req.body;
-
-  if (!content || content.trim() === '') {
-    return res.status(400).json({ message: 'Nội dung bình luận không được để trống' });
-  }
-
-  try {
-    const deal = await Deal.findById(dealId);
-    if (!deal) {
-      return res.status(404).json({ message: 'Không tìm thấy sự kiện' });
-    }
-
-    // Thêm bình luận vào sự kiện
-    deal.comments.push({ userId: req.user.userId, content });
-    await deal.save();
-
-    res.status(200).json({ message: 'Bình luận thành công', comments: deal.comments });
-  } catch (error) {
-    res.status(500).json({ message: 'Lỗi khi bình luận vào sự kiện', error });
+    console.error(error);
+    res.status(500).json({ message: 'Error adding rating' });
   }
 };
 
 
-module.exports = {
-  rateDeal: exports.rateDeal,
-  commentDeal: exports.commentDeal,
-};

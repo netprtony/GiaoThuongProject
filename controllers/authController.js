@@ -75,5 +75,29 @@ exports.register = async (req, res) => {
   }
 };
 
+// Lấy thông tin profile
+exports.getProfile = async (req, res) => {
+  try {
+      // Lấy thông tin người dùng dựa vào userId từ token
+      const userId = req.userId; // Được thiết lập trong middleware authMiddleware
+      const user = await User.findById(userId).populate('profile'); // Lấy thông tin user và profile
+
+      if (!user) {
+          return res.status(404).json({ message: 'Người dùng không tồn tại' });
+      }
+
+      res.status(200).json({
+          message: 'Lấy thông tin thành công',
+          user: {
+              userId: user._id, 
+              username: user.username,
+              email: user.email,
+              profile: user.profile // Trả về thông tin profile
+          },
+      });
+  } catch (error) {
+      res.status(500).json({ message: 'Lấy thông tin thất bại', error });
+  }
+};
 
 

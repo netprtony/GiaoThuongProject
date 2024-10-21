@@ -5,6 +5,7 @@ const authRoutes = require('./routes/auth');
 const dealRoutes = require('./routes/deal');  
 require('dotenv').config();
 const app = express();
+app.use(express.json());
 // Kết nối MongoDB
 mongoose.connect('mongodb://localhost:27017/ql_giaothuong', { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('Connected to MongoDB'))

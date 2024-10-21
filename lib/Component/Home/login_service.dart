@@ -22,7 +22,7 @@ class LoginService {
   final FlutterSecureStorage _storage = FlutterSecureStorage(); // Khởi tạo Secure Storage
 
   Future<LoginResponse?> login(String username, String password) async {
-    const String apiUrl = 'http://192.168.0.108:3000/api/auth/login'; 
+    const String apiUrl = 'http://localhost:3000/api/auth/login'; 
     final response = await http.post(
       Uri.parse(apiUrl),
       headers: <String, String>{

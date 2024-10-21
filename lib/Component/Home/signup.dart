@@ -3,11 +3,12 @@ import 'package:giaothuong/Component/Home/login.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+
 // Class dịch vụ đăng ký
 class RegisterService {
   Future<bool> register(String username, String password, String name, String gender, String dob, String phone, String company, String email, String address) async {
     final response = await http.post(
-      Uri.parse('http://192.168.0.108:3000/api/auth/register'),
+      Uri.parse('http://localhost:3000/api/auth/register'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -41,22 +42,22 @@ class Register extends StatefulWidget {
 }
 
 class RegisterState extends State<Register> {
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _genderController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _companyController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
   
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   final RegisterService _registerService = RegisterService();
 
-    // Hàm băm mật khẩu
+  // Hàm băm mật khẩu
   String hashPassword(String password) {
     var bytes = utf8.encode(password); // Chuyển password thành bytes
     var digest = sha256.convert(bytes); // Băm password với SHA-256
@@ -64,54 +65,54 @@ class RegisterState extends State<Register> {
   }
 
   void _handleRegister() async {
-  final username = _usernameController.text.trim();
-  final password = _passwordController.text.trim();
-  final confirmPassword = _confirmPasswordController.text.trim();
-  final name = _nameController.text.trim();
-  final gender = _genderController.text.trim();
-  final dob = _dobController.text.trim();
-  final phone = _phoneController.text.trim();
-  final company = _companyController.text.trim();
-  final email = _emailController.text.trim();
-  final address = _addressController.text.trim();
+    final username = _usernameController.text.trim();
+    final name = _nameController.text.trim();
+    final gender = _genderController.text.trim();
+    final dob = _dobController.text.trim();
+    final phone = _phoneController.text.trim();
+    final company = _companyController.text.trim();
+    final email = _emailController.text.trim();
+    final address = _addressController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
 
-  // Kiểm tra nhập liệu
-  if (username.isEmpty || password.isEmpty || name.isEmpty || gender.isEmpty ||
-      dob.isEmpty || phone.isEmpty || company.isEmpty || email.isEmpty || address.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Vui lòng điền đầy đủ thông tin')),
-    );
-    return;
-  }
-
-  if (password != confirmPassword) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Mật khẩu không khớp nhau')),
-    );
-    return;
-  }
-
-  // Gọi dịch vụ đăng ký
-  final success = await _registerService.register(username, password, name, gender, dob, phone, company, email, address);
-
-  if (mounted) {
-    if (success) {
+    // Kiểm tra nhập liệu
+    if (username.isEmpty || password.isEmpty || name.isEmpty || gender.isEmpty ||
+        dob.isEmpty || phone.isEmpty || company.isEmpty || email.isEmpty || address.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đăng kí thành công')),
+        const SnackBar(content: Text('Vui lòng điền đầy đủ thông tin')),
       );
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const Login(), // Chuyển hướng tới trang đăng nhập
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đăng kí thất bại hoặc tài khoản đã tồn tại')),
-      );
+      return;
     }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mật khẩu không khớp nhau')),
+      );
+      return;
+    }
+
+    // Gọi dịch vụ đăng ký
+    final success = await _registerService.register(username, password, name, gender, dob, phone, company, email, address);
+
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đăng kí thành công')),
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const Login(), // Chuyển hướng tới trang đăng nhập
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đăng kí thất bại hoặc tài khoản đã tồn tại')),
+        );
+      }
+    } 
   } 
-} 
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +123,7 @@ class RegisterState extends State<Register> {
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFC5D8EC), Color(0xFF1975D7)],
+                colors: [Color(0xFFC5D8EC), Color(0xFFFFA500)], // Thay đổi màu xanh thành màu cam
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -308,6 +309,12 @@ class RegisterState extends State<Register> {
                       filled: true,
                       fillColor: Colors.black.withOpacity(0.2),
                       prefixIcon: const Icon(Icons.lock, color: Colors.black),
+                      labelText: 'Mật khẩu',
+                      labelStyle: const TextStyle(color: Colors.black),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                        borderSide: BorderSide.none,
+                      ),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
@@ -319,17 +326,11 @@ class RegisterState extends State<Register> {
                           });
                         },
                       ),
-                      labelText: 'Mật khẩu',
-                      labelStyle: const TextStyle(color: Colors.black),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30.0),
-                        borderSide: BorderSide.none,
-                      ),
                     ),
                     style: const TextStyle(color: Colors.black),
                   ),
                   const SizedBox(height: 16),
-                  // Trường xác nhận mật khẩu
+                  // Trường nhập xác nhận mật khẩu
                   TextField(
                     controller: _confirmPasswordController,
                     obscureText: !_isConfirmPasswordVisible,
@@ -337,6 +338,12 @@ class RegisterState extends State<Register> {
                       filled: true,
                       fillColor: Colors.black.withOpacity(0.2),
                       prefixIcon: const Icon(Icons.lock, color: Colors.black),
+                      labelText: 'Xác nhận mật khẩu',
+                      labelStyle: const TextStyle(color: Colors.black),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                        borderSide: BorderSide.none,
+                      ),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
@@ -348,12 +355,6 @@ class RegisterState extends State<Register> {
                           });
                         },
                       ),
-                      labelText: 'Xác nhận mật khẩu',
-                      labelStyle: const TextStyle(color: Colors.black),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30.0),
-                        borderSide: BorderSide.none,
-                      ),
                     ),
                     style: const TextStyle(color: Colors.black),
                   ),
@@ -362,27 +363,28 @@ class RegisterState extends State<Register> {
                   ElevatedButton(
                     onPressed: _handleRegister,
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 15),
+                      backgroundColor: const Color(0xFFFFA500), // Màu cam cho nút
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.0),
+                        borderRadius: BorderRadius.circular(30),
                       ),
-                      backgroundColor: const Color(0xFF005CFA),
-                      foregroundColor: Colors.black,
                     ),
-                    child: const Text('Đăng kí'),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 30.0),
+                      child: Text(
+                        'Đăng ký',
+                        style: TextStyle(fontSize: 18, color: Colors.white),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  // Nút điều hướng tới đăng nhập
+                  const SizedBox(height: 20),
+                  // Liên kết tới trang đăng nhập
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        'Bạn có tài khoản?',
-                        style: TextStyle(color: Colors.black),
-                      ),
+                      const Text("Bạn đã có tài khoản?"),
                       TextButton(
                         onPressed: () {
-                          Navigator.push(
+                          Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
                               builder: (context) => const Login(),
@@ -391,10 +393,7 @@ class RegisterState extends State<Register> {
                         },
                         child: const Text(
                           'Đăng nhập',
-                          style: TextStyle(
-                            color: Color(0xFF000DFE),
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: TextStyle(color: Color.fromARGB(255, 0, 13, 254)), 
                         ),
                       ),
                     ],

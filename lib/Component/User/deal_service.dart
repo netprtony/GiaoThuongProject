@@ -2,12 +2,12 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class DealService {
-  final String apiUrl = 'http://192.168.0.108:3000/api/deals';
+  final String apiUrl = 'http://localhost:3000/api/deals';
 
   // Thêm deal mới
-  Future<bool> addDeal(String title, String description, double price, String company) async {
+  Future<bool> createDeal(String title, String description, double price, String company) async {
     final response = await http.post(
-      Uri.parse('$apiUrl/add'),
+      Uri.parse('$apiUrl/create'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -77,6 +77,47 @@ class DealService {
       return jsonDecode(response.body);
     } else {
       return [];
+    }
+  }
+
+  Future<bool> addComment(String dealId, String comment) async {
+    final url = Uri.parse('$apiUrl/comments/$dealId');  // URL API để thêm comment
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'comment': comment,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return true;  // Thành công
+      } else {
+        return false;  // Xử lý khi gặp lỗi
+      }
+    } catch (e) {
+      print("Error adding comment: $e");
+      return false;  // Xử lý khi gặp lỗi ngoại lệ
+    }
+  }
+
+  Future<bool> addRating(String dealId, int rating) async {
+    final response = await http.post(
+      Uri.parse('$apiUrl/rating/$dealId'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'rating': rating}),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      return false;
     }
   }
 }
