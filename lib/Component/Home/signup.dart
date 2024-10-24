@@ -1,38 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:giaothuong/Component/Home/login.dart';
-import 'package:http/http.dart' as http;
+import 'signup_service.dart'; 
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
-
-// Class dịch vụ đăng ký
-class RegisterService {
-  Future<bool> register(String username, String password, String name, String gender, String dob, String phone, String company, String email, String address) async {
-    final response = await http.post(
-      Uri.parse('http://127.0.0.1:3000/api/auth/register'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'username': username,
-        'password': password,
-        'name': name,
-        'gender': gender,
-        'dob': dob,
-        'phone': phone,
-        'company': company,
-        'email': email,
-        'address': address,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      final responseBody = json.decode(response.body);
-      return responseBody['message'] == 'Đăng ký thành công';
-    } else {
-      return false;
-    }
-  }
-}
 
 class Register extends StatefulWidget {
   const Register({super.key});
@@ -358,45 +328,21 @@ class RegisterState extends State<Register> {
                     ),
                     style: const TextStyle(color: Colors.black),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   // Nút đăng ký
                   ElevatedButton(
                     onPressed: _handleRegister,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFA500), // Màu cam cho nút
+                      backgroundColor: Colors.orange,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                        borderRadius: BorderRadius.circular(30.0),
                       ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 30.0),
-                      child: Text(
-                        'Đăng ký',
-                        style: TextStyle(fontSize: 18, color: Colors.white),
-                      ),
+                    child: const Text(
+                      'Đăng ký',
+                      style: TextStyle(fontSize: 20, color: Colors.white),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  // Liên kết tới trang đăng nhập
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text("Bạn đã có tài khoản?"),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const Login(),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Đăng nhập',
-                          style: TextStyle(color: Color.fromARGB(255, 0, 13, 254)), 
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),

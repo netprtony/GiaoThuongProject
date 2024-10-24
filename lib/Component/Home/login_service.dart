@@ -7,19 +7,24 @@ class LoginResponse {
   final String role;
   final String token;
 
-  LoginResponse({required this.authenticated, required this.role, required this.token});
+  const LoginResponse({
+    required this.authenticated,
+    required this.role,
+    required this.token,
+  });
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
     return LoginResponse(
-      authenticated: json['authenticated'] ?? false, // Kiểm tra trường 'authenticated'
-      role: json['role'] ?? 'USER', // Nếu không có 'role', gán giá trị mặc định là 'USER'
-      token: json['token'] ?? '', // Nếu không có 'token', gán giá trị mặc định là ''
+      authenticated: json['authenticated'] ?? false,
+      role: json['role'] ?? 'user',
+      token: json['token'] ?? '',
     );
   }
 }
 
 class LoginService {
-  final FlutterSecureStorage _storage = FlutterSecureStorage(); // Khởi tạo Secure Storage
+  // Khởi tạo Secure Storage với const
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   Future<LoginResponse?> login(String username, String password) async {
     const String apiUrl = 'http://127.0.0.1:3000/api/auth/login'; 
