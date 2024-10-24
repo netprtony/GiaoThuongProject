@@ -18,55 +18,61 @@ class LoginState extends State<Login> {
   final LoginService _loginService = LoginService();
 
   Future<void> _handleLogin() async {
-    final username = _usernameController.text.trim();
-    final password = _passwordController.text.trim();
+  final username = _usernameController.text.trim();
+  final password = _passwordController.text.trim();
 
-    if (username.isEmpty || password.isEmpty) {
+  if (username.isEmpty || password.isEmpty) {
+    if (!mounted) return; // Kiểm tra mounted trước khi sử dụng context
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Tài khoản và mật khẩu không được để trống'),
+      ),
+    );
+    return;
+  }
+
+  try {
+    final response = await _loginService.login(username, password);
+
+    if (!mounted) return; // Kiểm tra mounted sau khi hoàn thành tác vụ async
+
+    if (response != null && response.authenticated) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tài khoản và mật khẩu không được để trống'),
-        ),
+        SnackBar(content: Text('Đăng nhập thành công. Vai trò: ${response.role}')),
       );
-      return;
-    }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Token: ${response.token}')),
+      );
 
-    try {
-      final response = await _loginService.login(username, password);
-
-      if (response != null && response.authenticated) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Đăng nhập thành công. Vai trò: ${response.role}')),
+      // Navigate to different pages based on the role
+      if (response.role.contains('admin')) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const AdminDashboardScreen(),
+          ),
         );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Token: ${response.token}')),
-        );
-        // Navigate to different pages based on the role
-        if (response.role.contains('ADMIN')) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AdminDashboardScreen(),
-            ),
-          );
-        } else if (response.role.contains('MANAGER') || response.role.contains('USER')) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => Home(role: response.role, token: response.token),
-            ),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đăng nhập thất bại')),
+      } else if (response.role.contains('manager') || response.role.contains('user')) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Home(role: response.role, token: response.token),
+          ),
         );
       }
-    } catch (e) {
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Có lỗi xảy ra: $e')),
+        const SnackBar(content: Text('Đăng nhập thất bại')),
       );
     }
+  } catch (e) {
+    if (!mounted) return; // Kiểm tra mounted trước khi hiển thị lỗi
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Có lỗi xảy ra: $e')),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

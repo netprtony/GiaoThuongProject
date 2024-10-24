@@ -8,7 +8,7 @@ import 'package:crypto/crypto.dart';
 class RegisterService {
   Future<bool> register(String username, String password, String name, String gender, String dob, String phone, String company, String email, String address) async {
     final response = await http.post(
-      Uri.parse('http://localhost:3000/api/auth/register'),
+      Uri.parse('http://127.0.0.1:3000/api/auth/register'),
       headers: {
         'Content-Type': 'application/json',
       },

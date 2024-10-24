@@ -42,6 +42,7 @@ exports.register = async (req, res) => {
     
     const salt = await bcrypt.genSalt(10); // Tạo salt
     const hashedPassword = await bcrypt.hash(password, salt); // Băm mật khẩu
+    console.log('Mật khẩu đã băm:', hashedPassword); // In ra mật khẩu đã băm
 
     const newUser = new User({
       username,
@@ -74,6 +75,7 @@ exports.register = async (req, res) => {
     res.status(500).json({ message: 'Đăng ký thất bại', error: error.message });
   }
 };
+
 
 // Lấy thông tin profile
 exports.getProfile = async (req, res) => {
