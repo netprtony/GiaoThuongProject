@@ -18,61 +18,53 @@ class LoginState extends State<Login> {
   final LoginService _loginService = LoginService();
 
   Future<void> _handleLogin() async {
-  final username = _usernameController.text.trim();
-  final password = _passwordController.text.trim();
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text.trim();
 
-  if (username.isEmpty || password.isEmpty) {
-    if (!mounted) return; // Kiểm tra mounted trước khi sử dụng context
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Tài khoản và mật khẩu không được để trống'),
-      ),
-    );
-    return;
-  }
-
-  try {
-    final response = await _loginService.login(username, password);
-
-    if (!mounted) return; // Kiểm tra mounted sau khi hoàn thành tác vụ async
-
-    if (response != null && response.authenticated) {
+    if (username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đăng nhập thành công. Vai trò: ${response.role}')),
+        const SnackBar(
+          content: Text('Tài khoản và mật khẩu không được để trống'),
+        ),
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Token: ${response.token}')),
-      );
+      return;
+    }
 
-      // Navigate to different pages based on the role
-      if (response.role.contains('admin')) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const AdminDashboardScreen(),
-          ),
+    try {
+      final response = await _loginService.login(username, password);
+
+      if (response != null && response.authenticated) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Đăng nhập thành công. Vai trò: ${response.role}')),
         );
-      } else if (response.role.contains('manager') || response.role.contains('user')) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => Home(role: response.role, token: response.token),
-          ),
+
+        // Navigate to different pages based on the role
+        if (response.role.contains('admin')) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AdminDashboardScreen(),
+            ),
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Home(role: response.role, token: response.token),
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đăng nhập thất bại')),
         );
       }
-    } else {
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đăng nhập thất bại')),
+        SnackBar(content: Text('Có lỗi xảy ra: $e')),
       );
     }
-  } catch (e) {
-    if (!mounted) return; // Kiểm tra mounted trước khi hiển thị lỗi
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Có lỗi xảy ra: $e')),
-    );
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -83,8 +75,8 @@ class LoginState extends State<Login> {
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color.fromARGB(255, 255, 204, 204), // Màu cam nhạt
-                  Color.fromARGB(255, 255, 140, 0), // Màu cam
+                  Color.fromARGB(255, 255, 204, 204),
+                  Color.fromARGB(255, 255, 140, 0),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -177,7 +169,7 @@ class LoginState extends State<Login> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30.0),
                       ),
-                      backgroundColor: const Color.fromARGB(255, 255, 140, 0), // Màu cam
+                      backgroundColor: const Color.fromARGB(255, 255, 140, 0),
                       foregroundColor: const Color.fromARGB(255, 8, 8, 8),
                     ),
                     child: const Text('Đăng nhập'),
