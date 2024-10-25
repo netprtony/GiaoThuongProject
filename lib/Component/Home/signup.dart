@@ -22,7 +22,8 @@ class RegisterState extends State<Register> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
-  
+  // Khai báo biến _selectedRole với giá trị mặc định là "User"
+  String _selectedRole = 'User'; 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   final RegisterService _registerService = RegisterService();
@@ -45,7 +46,7 @@ class RegisterState extends State<Register> {
     final address = _addressController.text.trim();
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
-
+    String _selectedRole = 'User'; // Vai trò mặc định là "User"
     // Kiểm tra nhập liệu
     if (username.isEmpty || password.isEmpty || name.isEmpty || gender.isEmpty ||
         dob.isEmpty || phone.isEmpty || company.isEmpty || email.isEmpty || address.isEmpty) {
@@ -63,7 +64,7 @@ class RegisterState extends State<Register> {
     }
 
     // Gọi dịch vụ đăng ký
-    final success = await _registerService.register(username, password, name, gender, dob, phone, company, email, address);
+    final success = await _registerService.register(username, password, name, gender, dob, phone, company, email, address, _selectedRole);
 
     if (mounted) {
       if (success) {
@@ -269,6 +270,36 @@ class RegisterState extends State<Register> {
                       ),
                     ),
                     style: const TextStyle(color: Colors.black),
+                  ),
+                  const SizedBox(height: 16),
+                  InputDecorator(
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.black.withOpacity(0.2),
+                      labelText: 'Chọn vai trò',
+                      labelStyle: const TextStyle(color: Colors.black),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedRole, // Giá trị hiện tại
+                        isExpanded: true, // Giúp DropdownButton chiếm đầy chiều rộng
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedRole = newValue ?? 'User'; // Cập nhật giá trị
+                          });
+                        },
+                        items: <String>['User', 'Admin'].map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   // Trường nhập mật khẩu

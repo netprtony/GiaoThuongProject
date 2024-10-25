@@ -4,7 +4,7 @@ import 'package:crypto/crypto.dart';
 
 // Class dịch vụ đăng ký
 class RegisterService {
-  Future<bool> register(String username, String password, String name, String gender, String dob, String phone, String company, String email, String address) async {
+  Future<bool> register(String username, String password, String name, String gender, String dob, String phone, String company, String email, String address, String role) async {
     final hashedPassword = hashPassword(password); // Băm mật khẩu trước khi gửi
 
     final response = await http.post(
@@ -22,6 +22,7 @@ class RegisterService {
         'company': company,
         'email': email,
         'address': address,
+        'role': role, // Gửi vai trò
       }),
     );
 
@@ -33,10 +34,10 @@ class RegisterService {
     }
   }
 
-  // Hàm băm mật khẩu
   String hashPassword(String password) {
     var bytes = utf8.encode(password); // Chuyển password thành bytes
     var digest = sha256.convert(bytes); // Băm password với SHA-256
     return digest.toString(); // Chuyển hash thành chuỗi
   }
 }
+
