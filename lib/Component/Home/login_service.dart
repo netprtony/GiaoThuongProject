@@ -3,19 +3,19 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class LoginResponse {
-  final bool authenticated;
+  final String message;
   final String role;
   final String token;
 
   const LoginResponse({
-    required this.authenticated,
+    required this.message,
     required this.role,
     required this.token,
   });
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
     return LoginResponse(
-      authenticated: json['authenticated'] ?? false,
+      message: json['message'] ?? '',
       role: json['role'] ?? 'user',
       token: json['token'] ?? '',
     );
@@ -48,7 +48,10 @@ class LoginService {
 
       return loginResponse;
     } else {
-      return null; // Xử lý lỗi nếu không phải 200 OK
+      // Phân tích lỗi từ phản hồi
+      final Map<String, dynamic> errorData = jsonDecode(response.body);
+      print("Lỗi đăng nhập: ${errorData['message']}");
+      return null;
     }
   }
 }
