@@ -82,6 +82,38 @@ exports.login = async (req, res) => {
   }
 };
 
+// Lấy danh sách người dùng
+exports.listUsers = async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json({ code: 1000, result: users });
+  } catch (err) {
+    res.status(500).json({ code: 1001, message: 'Lỗi khi lấy danh sách người dùng' });
+  }
+};
+
+// Cập nhật vai trò của người dùng
+exports.updateUserRole = async (req, res) => {
+  const { username } = req.params;
+  const { roles } = req.body;
+
+  try {
+    const user = await User.findOneAndUpdate(
+      { username },
+      { userRoles: roles },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ code: 1002, message: 'Không tìm thấy người dùng' });
+    }
+
+    res.json({ code: 1000, result: user });
+  } catch (err) {
+    res.status(500).json({ code: 1003, message: 'Lỗi khi cập nhật vai trò người dùng' });
+  }
+};
+
 // Lấy thông tin profile
 exports.getProfile = async (req, res) => {
   try {

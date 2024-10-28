@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class User {
   String username;
@@ -9,8 +11,8 @@ class User {
   String email;
   String phone;
   String address;
-  String gender; // Thêm trường giới tính
-  DateTime dob; // Thêm trường ngày sinh
+  String gender;
+  DateTime dob;
   Set<String> userRoles;
 
   User({
@@ -26,54 +28,111 @@ class User {
     required this.dob,
     required this.userRoles,
   });
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      username: json['username'],
+      password: json['password'] ?? '',
+      confirmPassword: json['confirmPassword'] ?? '',
+      name: json['name'] ?? '',
+      company: json['company'] ?? '',
+      email: json['email'] ?? '',
+      phone: json['phone'] ?? '',
+      address: json['address'] ?? '',
+      gender: json['gender'] ?? '',
+      dob: DateTime.parse(json['dob']),
+      userRoles: json['userRoles'] != null ? Set<String>.from(json['userRoles']) : {},
+    );
+  }
 }
 
 class UserManagementScreen extends StatefulWidget {
-  const UserManagementScreen({super.key});
+  final String role;
+  final String token;
+  const UserManagementScreen({super.key, required this.role, required this.token});
 
+  @override
   UserManagementScreenState createState() => UserManagementScreenState();
 }
 
 class UserManagementScreenState extends State<UserManagementScreen> {
-  List<User> users = [
-    User(
-      username: 'muidao',
-      password: '123456',
-      confirmPassword: '123456',
-      name: 'Dao Qui Mui',
-      company: 'Vietsunco',
-      email: 'muidao156@gmail.com',
-      phone: '+84 773 15 39 87',
-      address: '390 Nữ Dân Công',
-      gender: 'Nữ', // Giới tính
-      dob: DateTime(1990, 5, 20), // Ngày sinh
-      userRoles: {'Admin'},
-    ),
-    User(
-      username: 'vikhang',
-      password: 'bakugan',
-      confirmPassword: 'bakugan',
-      name: 'Huynh Vi Khang',
-      company: 'Vietsunco',
-      email: 'huynhvikhang6a13@gmail.com',
-      phone: '+84 767 48 78 40',
-      address: '5/5A Bắc lân Bà Điểm Hóc Môn TPHCM',
-      gender: 'Nam', // Giới tính
-      dob: DateTime(1995, 8, 15), // Ngày sinh
-      userRoles: {'User'},
-    ),
-  ];
-
+  List<User> users = [];
   List<User> filteredUsers = [];
   TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    filteredUsers = users; // Initialize filtered list with all users
+    _fetchUsers();
   }
 
-  // Function to filter users by name or role
+  Future<void> _updateUserRole(String username, String newRole) async {
+    final String url = 'http://127.0.0.1:3000/api/auth/updateRole/$username';
+    final response = await http.put(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({'roles': [newRole]}),
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(utf8.decode(response.bodyBytes));
+      if (jsonResponse['code'] == 1000) {
+        setState(() {
+          final updatedUser = User.fromJson(jsonResponse['result']);
+          final index = users.indexWhere((user) => user.username == username);
+          if (index != -1) {
+            users[index] = updatedUser;
+            filteredUsers = users;
+          }
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đổi quyền thành công')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update user role: ${jsonResponse['code']}')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Cập nhật thất bại: ${response.statusCode}')),
+      );
+    }
+  }
+
+  Future<void> _fetchUsers() async {
+    const String url = 'http://127.0.0.1:3000/api/auth/listUsers';
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(utf8.decode(response.bodyBytes));
+      if (jsonResponse['code'] == 1000) {
+        setState(() {
+          users = (jsonResponse['result'] as List)
+              .map((data) => User.fromJson(data))
+              .toList();
+          filteredUsers = users;
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load users: ${jsonResponse['code']}')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load users: ${response.statusCode}')),
+      );
+    }
+  }
+
   void _filterUsers(String query) {
     setState(() {
       if (query.isEmpty) {
@@ -88,34 +147,11 @@ class UserManagementScreenState extends State<UserManagementScreen> {
     });
   }
 
-  // Function to handle adding or editing users
   void _showUserForm({User? user}) {
     final isEditing = user != null;
     final usernameController = TextEditingController(text: isEditing ? user.username : '');
     final passwordController = TextEditingController(text: isEditing ? user.password : '');
-    final confirmPasswordController = TextEditingController(text: isEditing ? user.confirmPassword : '');
-    final nameController = TextEditingController(text: isEditing ? user.name : '');
-    final companyController = TextEditingController(text: isEditing ? user.company : '');
-    final emailController = TextEditingController(text: isEditing ? user.email : '');
-    final phoneController = TextEditingController(text: isEditing ? user.phone : '');
-    final addressController = TextEditingController(text: isEditing ? user.address : '');
-    String selectedRole = isEditing && user.userRoles.isNotEmpty ? user.userRoles.first : 'User';
-    String selectedGender = isEditing ? user.gender : 'Nam'; // Giới tính
-    DateTime? selectedDob = isEditing ? user.dob : null; // Ngày sinh
-
-    // Date picker function
-    Future<void> _selectDate(BuildContext context) async {
-      final DateTime? picked = await showDatePicker(
-        context: context,
-        initialDate: selectedDob ?? DateTime.now(),
-        firstDate: DateTime(1900),
-        lastDate: DateTime.now(),
-      );
-      if (picked != null && picked != selectedDob)
-        setState(() {
-          selectedDob = picked; // Cập nhật ngày sinh
-        });
-    }
+    String selectedRole = isEditing && user.userRoles.isNotEmpty ? user.userRoles.first : 'USER';
 
     showDialog(
       context: context,
@@ -130,18 +166,6 @@ class UserManagementScreenState extends State<UserManagementScreen> {
                 const SizedBox(height: 10),
                 _buildTextField(passwordController, "Mật khẩu"),
                 const SizedBox(height: 10),
-                _buildTextField(confirmPasswordController, "Xác nhận mật khẩu"),
-                const SizedBox(height: 10),
-                _buildTextField(nameController, "Họ và tên"),
-                const SizedBox(height: 10),
-                _buildTextField(companyController, "Công ty"),
-                const SizedBox(height: 10),
-                _buildTextField(emailController, "Email"),
-                const SizedBox(height: 10),
-                _buildTextField(phoneController, "Số điện thoại"),
-                const SizedBox(height: 10),
-                _buildTextField(addressController, "Địa chỉ"),
-                const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
                   value: selectedRole,
                   decoration: InputDecoration(
@@ -152,7 +176,7 @@ class UserManagementScreenState extends State<UserManagementScreen> {
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.9),
                   ),
-                  items: ['User', 'Admin'].map((role) {
+                  items: ['USER', 'MANAGER', 'ADMIN'].map((role) {
                     return DropdownMenuItem<String>(
                       value: role,
                       child: Text(role),
@@ -163,46 +187,7 @@ class UserManagementScreenState extends State<UserManagementScreen> {
                       selectedRole = value!;
                     });
                   },
-                ),
-                const SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  value: selectedGender,
-                  decoration: InputDecoration(
-                    labelText: "Giới tính",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white.withOpacity(0.9),
-                  ),
-                  items: ['Nam', 'Nữ'].map((gender) {
-                    return DropdownMenuItem<String>(
-                      value: gender,
-                      child: Text(gender),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedGender = value!;
-                    });
-                  },
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: TextEditingController(
-                    text: selectedDob != null ? "${selectedDob!.day}/${selectedDob!.month}/${selectedDob!.year}" : '',
-                  ),
-                  decoration: InputDecoration(
-                    labelText: "Ngày sinh",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white.withOpacity(0.9),
-                  ),
-                  onTap: () => _selectDate(context), // Mở DatePicker khi nhấn
-                  readOnly: true,
-                ),
+                )
               ],
             ),
           ),
@@ -213,36 +198,27 @@ class UserManagementScreenState extends State<UserManagementScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                setState(() {
-                  if (isEditing) {
-                    user.username = usernameController.text;
-                    user.password = passwordController.text;
-                    user.confirmPassword = confirmPasswordController.text;
-                    user.name = nameController.text;
-                    user.company = companyController.text;
-                    user.email = emailController.text;
-                    user.phone = phoneController.text;
-                    user.address = addressController.text;
-                    user.userRoles = {selectedRole};
-                    user.gender = selectedGender; // Cập nhật giới tính
-                    user.dob = selectedDob ?? DateTime.now(); // Cập nhật ngày sinh
-                  } else {
+                if (isEditing) {
+                  _updateUserRole(user.username, selectedRole);
+                  _fetchUsers();
+                } else {
+                  setState(() {
                     users.add(User(
                       username: usernameController.text,
                       password: passwordController.text,
-                      confirmPassword: confirmPasswordController.text,
-                      name: nameController.text,
-                      company: companyController.text,
-                      email: emailController.text,
-                      phone: phoneController.text,
-                      address: addressController.text,
+                      confirmPassword: '',
+                      name: '',
+                      company: '',
+                      email: '',
+                      phone: '',
+                      address: '',
+                      gender: '',
+                      dob: DateTime.now(),
                       userRoles: {selectedRole},
-                      gender: selectedGender, // Giới tính
-                      dob: selectedDob ?? DateTime.now(), // Ngày sinh
                     ));
-                  }
-                  filteredUsers = users; // Reset filtered list after adding or editing
-                });
+                    filteredUsers = users;
+                  });
+                }
                 Navigator.pop(context);
               },
               child: Text(isEditing ? "Sửa" : "Thêm"),
@@ -283,7 +259,6 @@ class UserManagementScreenState extends State<UserManagementScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              // Search Bar
               TextField(
                 controller: searchController,
                 decoration: InputDecoration(
@@ -297,52 +272,61 @@ class UserManagementScreenState extends State<UserManagementScreen> {
                   fillColor: Colors.white.withOpacity(1),
                 ),
                 onChanged: (value) {
-                  _filterUsers(value); // Filter users when search query changes
+                  _filterUsers(value);
                 },
               ),
               const SizedBox(height: 20),
               Expanded(
-                child: ListView.builder(
-                  itemCount: filteredUsers.length,
-                  itemBuilder: (context, index) {
-                    final user = filteredUsers[index];
-                    return Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      elevation: 10,
-                      margin: const EdgeInsets.only(bottom: 20),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: const Color.fromARGB(255, 25, 117, 215),
-                          child: Text(
-                            user.name[0],
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                child: RefreshIndicator(
+                  onRefresh: _fetchUsers,
+                  child: ListView.builder(
+                    itemCount: filteredUsers.length,
+                    itemBuilder: (context, index) {
+                      final user = filteredUsers[index];
+                      return Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        elevation: 10,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: const Color.fromARGB(255, 25, 117, 215),
+                            child: Text(
+                              user.name.isNotEmpty ? user.name[0] : '',
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Roboto')),
+                          subtitle: Text(user.email, style: const TextStyle(fontFamily: 'Roboto')),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.orange),
+                                onPressed: () => _showUserForm(user: user),
+                              ),
+                            ],
                           ),
                         ),
-                        title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text(user.email),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.orange),
-                              onPressed: () => _showUserForm(user: user),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
             ],
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showUserForm(),
-        child: const Icon(Icons.add),
+      floatingActionButton: Material(
+        elevation: 10,
+        shadowColor: Colors.blueAccent,
+        shape: const CircleBorder(),
+        child: FloatingActionButton(
+          onPressed: () => _showUserForm(),
+          backgroundColor: Colors.white,
+          child: const Icon(Icons.add, color: Colors.black),
+        ),
       ),
     );
   }

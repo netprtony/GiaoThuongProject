@@ -1,128 +1,192 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:giaothuong/Component/Admin/add_new_event.dart';
+import 'package:http/http.dart' as http;
 
-class EventListManagementScreen extends StatefulWidget {
-  const EventListManagementScreen({super.key});
+class EventList {
+  String title;
+  String content;
+  String description;
+  double price;
+  String company;
+  String username;
+  double rating;
+  List<Comment> comments;
 
-  @override
-  _EventListManagementScreenState createState() => _EventListManagementScreenState();
+  EventList({
+    required this.title,
+    required this.content,
+    required this.description,
+    required this.price,
+    required this.company,
+    required this.username,
+    required this.rating,
+    required this.comments,
+  });
+
+  factory EventList.fromJson(Map<String, dynamic> json) {
+    return EventList(
+      title: json['title'] ?? '',
+      content: json['content'] ?? '',
+      description: json['description'] ?? '',
+      price: (json['price'] ?? 0).toDouble(),
+      company: json['company'] ?? '',
+      username: json['username'] ?? '',
+      rating: (json['rating'] ?? 0).toDouble(),
+      comments: (json['comments'] as List<dynamic>?)
+              ?.map((comment) => Comment.fromJson(comment))
+              .toList() ??
+          [],
+    );
+  }
 }
 
-class _EventListManagementScreenState extends State<EventListManagementScreen> {
-  // List các sự kiện mẫu
-  final List<Map<String, dynamic>> _eventList = [
-    {'title': 'Bất động sản', 'content': 'Phú Mỹ Hưng', 'star': '4'},
-    {'title': 'Công nghệ', 'content': 'Train App', 'star': '5'},
-  ];
+class Comment {
+  String user;
+  String commentText;
+
+  Comment({
+    required this.user,
+    required this.commentText,
+  });
+
+  factory Comment.fromJson(Map<String, dynamic> json) {
+    return Comment(
+      user: json['user'] ?? '',
+      commentText: json['commentText'] ?? '',
+    );
+  }
+}
+
+class EventListManagementScreen extends StatefulWidget {
+  final String token;
+  final String role;
+  const EventListManagementScreen({super.key, required this.token, required this.role});
+
+  @override
+  EventListManagementScreenState createState() => EventListManagementScreenState();
+}
+
+class EventListManagementScreenState extends State<EventListManagementScreen> {
+  List<EventList> events = [];
+  List<EventList> filteredEvents = [];
+  TextEditingController searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchEvents();
+  }
+
+  Future<void> _fetchEvents() async {
+    const String url = 'http://127.0.0.1:3000/api/deal/listEvent';
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+      },
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      final List<EventList> loadedEvents = (data['result'] as List)
+          .map((eventJson) => EventList.fromJson(eventJson))
+          .toList();
+
+      setState(() {
+        events = loadedEvents;
+        filteredEvents = events;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load events: ${response.statusCode}')),
+      );
+    }
+  }
+
+  void _filterEvents(String query) {
+    setState(() {
+      final lowerCaseQuery = query.toLowerCase();
+
+      filteredEvents = events.where((event) {
+        final matchesTitle = event.title.toLowerCase().contains(lowerCaseQuery);
+        return matchesTitle;
+      }).toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quản Lý Danh Sách Giao Dịch'),
-        centerTitle: true,
-      ),
-      body: ListView.builder(
-        itemCount: _eventList.length,
-        itemBuilder: (context, index) {
-          final event = _eventList[index];
-          return Card(
-            elevation: 4,
-            margin: const EdgeInsets.all(10),
-            child: ListTile(
-              leading: const Icon(Icons.event),
-              title: Text(event['title']),
-              subtitle: Text('Nội dung: ${event['content']} - Đánh giá: ${event['star']}'),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete, color: Colors.redAccent),
-                onPressed: () {
-                  _confirmDelete(index);
+      extendBodyBehindAppBar: true,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color.fromARGB(255, 197, 216, 236),
+              Color.fromARGB(255, 25, 117, 215),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              TextField(
+                controller: searchController,
+                decoration: InputDecoration(
+                  labelText: "Tìm kiếm theo tiêu đề",
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.9),
+                ),
+                onChanged: (value) {
+                  _filterEvents(value);
                 },
               ),
-              onTap: () {
-                _viewEventDetails(event);
-              },
-            ),
-          );
-        },
+              const SizedBox(height: 20),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _fetchEvents,
+                  child: ListView.builder(
+                    itemCount: filteredEvents.length,
+                    itemBuilder: (context, index) {
+                      final event = filteredEvents[index];
+                      return Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        elevation: 10,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        child: ListTile(
+                          title: Text(event.title,
+                              style: const TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold)),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("Mô tả: ${event.description}"),
+                              Text("Giá: \$${event.price.toStringAsFixed(2)}"),
+                              Text("Công ty: ${event.company}"),
+                              Text("Người dùng: ${event.username}"),
+                              Text("Đánh giá: ${event.rating.toString()}/5"),
+                              ...event.comments.map((comment) => Text(
+                                  "${comment.user}: ${comment.commentText}")),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addNewEvent,
-        child: const Icon(Icons.add),
-        backgroundColor: Colors.blueAccent,
-      ),
-    );
-  }
-
-  // Thêm giao dịch mới
-  void _addNewEvent() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const AddNewEventScreen()),
-    ).then((newEvent) {
-      if (newEvent != null) {
-        setState(() {
-          _eventList.add(newEvent); // Thêm sự kiện mới vào danh sách
-        });
-        print('Sự kiện mới đã được thêm:');
-        print('Tiêu đề: ${newEvent['title']}');
-        print('Nội dung: ${newEvent['content']}');
-        print('Số sao: ${newEvent['star']}');
-      }
-    });
-  }
-
-
-
-  // Hiển thị chi tiết giao dịch
-  void _viewEventDetails(Map<String, dynamic> event) {
-    // Logic để hiển thị chi tiết sự kiện (có thể hiển thị dưới dạng dialog hoặc trang chi tiết)
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Chi Tiết Giao Dịch: ${event['title']}'),
-          content: Text('Nội dung: ${event['content']}\nĐánh giá: ${event['star']}'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Đóng'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // Xác nhận xóa sự kiện
-  void _confirmDelete(int index) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Xác Nhận Xóa'),
-          content: const Text('Bạn có chắc chắn muốn xóa giao dịch này không?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Không'),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _eventList.removeAt(index);
-                });
-                Navigator.of(context).pop();
-              },
-              child: const Text('Có', style: TextStyle(color: Colors.redAccent)),
-            ),
-          ],
-        );
-      },
     );
   }
 }

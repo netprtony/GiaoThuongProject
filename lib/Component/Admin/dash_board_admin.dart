@@ -5,7 +5,9 @@ import 'package:giaothuong/Component/Admin/event_management.dart';
 import 'package:giaothuong/Component/Home/login.dart'; // Ensure correct imports
 
 class AdminDashboardScreen extends StatefulWidget {
-  const AdminDashboardScreen({super.key});
+  final String role;
+  final String token;
+  const AdminDashboardScreen({super.key, required this.role, required this.token});
 
   @override
   AdminDashboardScreenState createState() => AdminDashboardScreenState();
@@ -13,14 +15,6 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _selectedIndex = 0; // Track the selected tab
-
-  // Different screens corresponding to each tab in the bottom navigation bar
-  static final List<Widget> _widgetOptions = <Widget>[
-    const UserManagementScreen(), // Manage Users
-    const EventManagementScreen(), // Manage Events
-    const EventListManagementScreen(), // Manage Participants
-    const ExportReportScreen(), // Export Report
-  ];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -72,22 +66,38 @@ class AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> widgetOptions = <Widget>[
+      UserManagementScreen(role: widget.role, token: widget.token), // Manage Users
+      EventManagementScreen(role: widget.role, token: widget.token), // Manage Events
+      EventListManagementScreen(role: widget.role, token: widget.token), // Manage Participants
+    ];
+
     return Scaffold(
       appBar: AppBar(
         elevation: 10,
         automaticallyImplyLeading: false, // Remove the default back button
+        title: Padding(
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).size.height * 0.00, // Điều chỉnh padding tiêu đề theo chiều cao màn hình
+          ),
+          child: Text(
+            "Quản trị",
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: MediaQuery.of(context).size.width * 0.06, // Điều chỉnh kích thước font theo tỷ lệ màn hình
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color.fromARGB(255, 25, 117, 215),
+        toolbarHeight: MediaQuery.of(context).size.height * 0.06,
         leading: IconButton(
           icon: const Icon(Icons.logout_sharp),
           onPressed: () {
             _showLogoutDialog(context, const Login()); // Replace with your login screen
           },
-        ),
-        title: const Text(
-          "Quản Trị",
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.blueAccent,
+      ),
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -100,7 +110,7 @@ class AdminDashboardScreenState extends State<AdminDashboardScreen> {
             end: Alignment.bottomCenter,
           ),
         ),
-        child: _widgetOptions[_selectedIndex], // Display the selected screen
+        child: widgetOptions[_selectedIndex], // Display the selected screen
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
@@ -110,15 +120,11 @@ class AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.event),
-            label: 'Giao Dịch',
+            label: 'Sự kiện',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.people),
             label: 'Danh Sách',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.report),
-            label: 'Xuất Báo Cáo',
           ),
         ],
         currentIndex: _selectedIndex,
@@ -128,27 +134,6 @@ class AdminDashboardScreenState extends State<AdminDashboardScreen> {
         type: BottomNavigationBarType.fixed, // Ensures the bar does not shift
         backgroundColor: Colors.white,
       ),
-    );
-  }
-}
-
-class ExportReportScreen extends StatelessWidget {
-  const ExportReportScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color.fromARGB(255, 197, 216, 236),
-            Color.fromARGB(255, 25, 117, 215),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      child: const Center(child: Text('Export Report Screen')),
     );
   }
 }

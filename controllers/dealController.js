@@ -90,7 +90,16 @@ exports.addComment = async (req, res) => {
   }
 };
 
-
+// Lấy sự kiện theo ID
+exports.getDealById = async (req, res) => {
+  try {
+    const deal = await Deal.findById(req.params.id);
+    if (!deal) return res.status(404).json({ message: 'Deal not found' });
+    res.status(200).json(deal);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // Thêm đánh giá
 exports.addRating = async (req, res) => {

@@ -8,6 +8,7 @@ router.post('/create', authMiddleware, dealController.createDeal);
 router.put('/update/:dealId', authMiddleware, dealController.updateDeal); 
 router.delete('/delete/:dealId', authMiddleware, dealController.deleteDeal); 
 router.get('/list', dealController.getDeals); 
+router.get('/:id', dealController.getDealById);
 router.post('/comment/:dealId', authMiddleware, dealController.addComment); 
 router.post('/rating/:dealId', authMiddleware, dealController.addRating); 
 

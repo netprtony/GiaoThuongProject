@@ -1,3 +1,4 @@
+// Đảm bảo rằng bạn đã nhập đúng các thư viện cần thiết ở đầu file.
 import 'package:flutter/material.dart';
 import 'package:giaothuong/Component/Admin/dash_board_admin.dart';
 import 'package:giaothuong/Component/Home/home.dart';
@@ -22,13 +23,11 @@ class LoginState extends State<Login> {
     final password = _passwordController.text.trim();
 
     if (username.isEmpty || password.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tài khoản và mật khẩu không được để trống'),
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tài khoản và mật khẩu không được để trống'),
+        ),
+      );
       return;
     }
 
@@ -36,41 +35,35 @@ class LoginState extends State<Login> {
       final response = await _loginService.login(username, password);
 
       if (response != null && response.token.isNotEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Đăng nhập thành công. Vai trò: ${response.role}')),
-          );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Đăng nhập thành công. Vai trò: ${response.role}')),
+        );
 
-          // Điều hướng dựa vào vai trò của người dùng
-          if (response.role == 'admin') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const AdminDashboardScreen(),
-              ),
-            );
-          } else {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => Home(role: response.role, token: response.token),
-              ),
-            );
-          }
+        // Điều hướng dựa vào vai trò của người dùng
+        if (response.role == 'admin') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AdminDashboardScreen(role: response.role, token: response.token), // Thêm role và token
+            ),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Home(role: response.role, token: response.token),
+            ),
+          );
         }
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đăng nhập thất bại. Vui lòng kiểm tra tài khoản và mật khẩu.')),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Có lỗi xảy ra: $e')),
+          const SnackBar(content: Text('Đăng nhập thất bại. Vui lòng kiểm tra tài khoản và mật khẩu.')),
         );
       }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Có lỗi xảy ra: $e')),
+      );
     }
   }
 
