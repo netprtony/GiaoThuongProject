@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:giaothuong/Component/Settings/settings_screen.dart' as settings;
-import 'package:giaothuong/Component/User/deal_service.dart';
+import 'package:giaothuong/Component/Settings/settings_screen.dart';
+import 'package:giaothuong/Component/Admin/event_list_management.dart';
+import 'package:giaothuong/Component/User/notification.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:intl/intl.dart';
 
 class Home extends StatefulWidget {
   final String role;
@@ -13,199 +17,126 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  // Danh sách giao dịch
-  final List<Map<String, dynamic>> _transactions = [
-    {
-      'title': 'Bất động sản',
-      'content': 'Phú Mỹ Hưng',
-      'price': '15000',
-      'company': 'Vietsunco',
-      'star': 4,  // Thay đổi thành kiểu int
-      'comments': <String>[], // Đảm bảo đây là một List<String>
-    },
-    {
-      'title': 'Công nghệ',
-      'content': 'Train App',
-      'price': '10000',
-      'company': 'Vietsunco',
-      'star': 5,
-      'comments': <String>[],
-    },
-    {
-      'title': 'Dịch vụ',
-      'content': 'Giao hàng nhanh',
-      'price': '8000',
-      'company': 'Vietsunco',
-      'star': 3,
-      'comments': <String>[],
-    },
-  ];
-
-  
-  
-  DealService dealService = DealService();
-  List<dynamic> deals = [];
+  Map<String, dynamic>? userInfo;
+  List<dynamic> _upcomingEvents = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchDeals();
+    _fetchUserInfo();
+    _fetchUpcomingEvents();
   }
 
-  void _fetchDeals() async {
-    List<dynamic> fetchedDeals = await dealService.getDeals();
-    setState(() {
-      deals = fetchedDeals;
-    });
+  Future<void> _fetchUserInfo() async {
+    final response = await http.get(
+      Uri.parse('http://127.0.0.1:3000/api/auth/profile'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+      },
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      setState(() {
+        userInfo = data['result'];
+      });
+    } else {
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to load user info')),
+      );
+    }
   }
 
-  void _addDeal() async {
-  bool success = await dealService.createDeal(
-    'New Deal',
-    'This is a new deal',
-    100.0,
-    'Some Company',
-  );
-
-  if (!mounted) return; // Kiểm tra widget có còn mounted không
-
-  if (success) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Deal added successfully')),
+  Future<void> _fetchUpcomingEvents() async {
+    final response = await http.get(
+      Uri.parse('http://127.0.0.1:3000/api/deals/list'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+      },
     );
-    _fetchDeals();
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to add deal')),
-    );
+    if (response.statusCode == 200) {
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      final List<dynamic> allEvents = data['result'];
+
+      // Filter events to include only upcoming events
+      final DateFormat dateFormat = DateFormat('dd-MM-yyyy HH:mm');
+      final DateTime now = DateTime.now().toLocal();
+      final List<dynamic> upcomingEvents = allEvents.where((event) {
+        final DateTime eventStartDate = DateTime.parse(event['dateStart']).toLocal();
+        return now.isBefore(eventStartDate);
+      }).map((event) {
+        event['formattedDateStart'] = dateFormat.format(DateTime.parse(event['dateStart']).toLocal());
+        return event;
+      }).toList();
+
+      setState(() {
+        _upcomingEvents = upcomingEvents;
+      });
+    } else {
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load events: ${response.statusCode}')),
+      );
+    }
   }
-}
-
-void _updateDeal(String dealId) async {
-  bool success = await dealService.updateDeal(
-    dealId,
-    'Updated Deal',
-    'Updated description',
-    150.0,
-    'Updated Company',
-  );
-
-  if (!mounted) return; // Kiểm tra widget có còn mounted không
-
-  if (success) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Deal updated successfully')),
-    );
-    _fetchDeals();
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to update deal')),
-    );
-  }
-}
-
-void _deleteDeal(String dealId) async {
-  bool success = await dealService.deleteDeal(dealId);
-
-  if (!mounted) return; // Kiểm tra widget có còn mounted không
-
-  if (success) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Deal deleted successfully')),
-    );
-    _fetchDeals();
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to delete deal')),
-    );
-  }
-}
-
-void _addComment(String dealId, String newComment) async {
-  bool success = await dealService.addComment(dealId, newComment);
-
-  if (!mounted) return; // Kiểm tra widget có còn mounted không
-
-  if (success) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Comment added successfully')),
-    );
-    _fetchDeals(); // Cập nhật lại danh sách deal sau khi thêm comment
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to add comment')),
-    );
-  }
-}
-
 
   @override
   Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      title: const Text('Deal Management'),
-    ),
-    body: Stack(
-      children: [
-        // Gradient background
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color.fromARGB(255, 255, 200, 0), // Màu cam
-                Color.fromARGB(255, 255, 140, 0), // Màu cam đậm hơn
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+    return Scaffold(
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color.fromARGB(255, 197, 216, 236),
+                  Color.fromARGB(255, 25, 117, 215),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
             ),
           ),
-        ),
-        // Main content
-        SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header with profile
-                Material(
-                  elevation: 8,
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 10.0, horizontal: 20.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.8),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Dao Qui Mui",
-                          style: TextStyle(
-                            color: Color.fromARGB(255, 25, 25, 25),
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2,
+          SafeArea(
+            child: SingleChildScrollView( // Sử dụng SingleChildScrollView để tránh tràn màn hình
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Material(
+                    elevation: 8,
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            userInfo?['full_Name'] ?? 'Loading...',
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 25, 25, 25),
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.2,
+                            ),
                           ),
-                        ),
-                        CircleAvatar(
-                          backgroundImage: AssetImage(
-                              'assets/images/person.png'), // Hình đại diện
-                          radius: 25,
-                          backgroundColor: Colors.white,
-                        ),
-                      ],
+                          const CircleAvatar(
+                            backgroundImage: AssetImage('assets/avatar.png'),
+                            radius: 25,
+                            backgroundColor: Colors.white,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                // Body content
-                Expanded(
-                  child: Row(
+                  const SizedBox(height: 20),
+                  // Sử dụng Expanded cho phần sự kiện và button
+                  Row(
                     children: [
-                      // Event List
                       Expanded(
                         flex: 2,
                         child: Container(
@@ -218,24 +149,32 @@ void _addComment(String dealId, String newComment) async {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'Danh sách giao dịch',
+                                "Sự kiện sắp tới",
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
+                                  color: Colors.black,
                                 ),
                               ),
                               const SizedBox(height: 10),
-                              Expanded(
+                              // Thay Expanded bằng Flexible để tránh lỗi chiều cao
+                              Flexible(
                                 child: ListView.builder(
-                                  itemCount: _transactions.length, // Sử dụng _transactions
+                                  shrinkWrap: true,
+                                  physics: NeverScrollableScrollPhysics(), // Ngăn cuộn bên trong
+                                  itemCount: _upcomingEvents.length,
                                   itemBuilder: (context, index) {
-                                    final transaction = _transactions[index]; // Lấy từng giao dịch
+                                    final event = _upcomingEvents[index];
                                     return _buildEventCard(
-                                      transaction['_id'], // Truyền dealId vào đây (nếu có)
-                                      transaction['title'],
-                                      transaction['content'],
-                                      transaction['star'].toString(),
-                                      transaction['comments'] ?? [], // Kiểm tra nếu không có bình luận
+                                      event,
+                                      event['title'] ?? 'Chưa cập nhật',
+                                      event['formattedDateStart'] ?? 'Chưa cập nhật',
+                                      event['locationId'] ?? 'Chưa cập nhật',
+                                      event['content'] ?? 'Chưa cập nhật',
+                                      event['price'] ?? 0,
+                                      event['company'] ?? 'Chưa cập nhật',
+                                      event['managerId'] ?? 'Chưa cập nhật',
+                                      event['isRegistered'] ?? false,
                                     );
                                   },
                                 ),
@@ -245,7 +184,6 @@ void _addComment(String dealId, String newComment) async {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      // Quick Access Grid
                       Expanded(
                         flex: 1,
                         child: Column(
@@ -255,32 +193,24 @@ void _addComment(String dealId, String newComment) async {
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
+                                  _buildQuickAccessButton(
+                                    "Sự kiện",
+                                    Icons.event,
+                                    EventListManagementScreen(role: widget.role, token: widget.token),
+                                  ),
                                   const SizedBox(height: 16),
                                   _buildQuickAccessButton(
-                                      "Cài đặt",
-                                      Icons.settings,
-                                      settings.SettingsScreen(
-                                          token: widget.token)),
+                                    "Thông báo",
+                                    Icons.notifications,
+                                    NotificationsPage(token: widget.token),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _buildQuickAccessButton(
+                                    "Cài đặt",
+                                    Icons.settings,
+                                    SettingsScreen(token: widget.token),
+                                  ),
                                 ],
-                              ),
-                            ),
-                            // Status Overview
-                            Material(
-                              elevation: 10,
-                              borderRadius: BorderRadius.circular(10),
-                              child: Container(
-                                padding: const EdgeInsets.all(16.0),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.8),
-                                  borderRadius: BorderRadius.circular(10),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 5),
-                                    ),
-                                  ],
-                                ),
                               ),
                             ),
                           ],
@@ -288,29 +218,16 @@ void _addComment(String dealId, String newComment) async {
                       ),
                     ],
                   ),
-                ),
-                // Nút Floating Action Button
-                Positioned(
-                  bottom: 16,
-                  right: 16,
-                  child: FloatingActionButton(
-                    onPressed: _addDeal,
-                    child: const Icon(Icons.add),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
-
-  Widget _buildEventCard(String dealId, String title, String content, String star, List<String> comments) {
-    int starCount = int.tryParse(star) ?? 0;
-
+  Widget _buildEventCard(dynamic event, String title, String dateStart, String location, String content, double price, String company, String managerId, bool isRegistered) {
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
@@ -327,62 +244,17 @@ void _addComment(String dealId, String newComment) async {
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 5),
-              Text(content),
-              const SizedBox(height: 10),
-              // Hiển thị xếp hạng sao
-              Row(
-                children: List.generate(5, (index) {
-                  return Icon(
-                    index < starCount ? Icons.star : Icons.star_border,
-                    color: index < starCount ? Colors.amber : Colors.grey,
-                  );
-                }),
-              ),
-              const SizedBox(height: 10),
-              // Hiển thị bình luận
-              const Text(
-                'Bình luận:',
-                style: TextStyle(
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
               ),
-              ...comments.map((comment) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 5.0),
-                  child: Text(comment),
-                );
-              }), // Loại bỏ toList() ở đây
-              const SizedBox(height: 10),
-              // Nút thêm bình luận
-              TextField(
-                onSubmitted: (newComment) {
-                  _addComment(dealId, newComment); // Gọi hàm thêm bình luận
-                },
-                decoration: const InputDecoration(
-                  labelText: 'Thêm bình luận',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              // Nút cập nhật
-              TextButton(
-                onPressed: () {
-                  _updateDeal(dealId); // Gọi hàm cập nhật
-                },
-                child: const Text('Cập nhật'),
-              ),
-              // Nút xóa
-              TextButton(
-                onPressed: () {
-                  _deleteDeal(dealId); // Gọi hàm xóa
-                },
-                child: const Text('Xóa'),
-              ),
+              const SizedBox(height: 5),
+              Text("Nội dung: $content", style: const TextStyle(color: Colors.black54)),
+              Text("Giá: \$${price.toString()}", style: const TextStyle(color: Colors.black54)),
+              Text("Công ty: $company", style: const TextStyle(color: Colors.black54)),
+              Text("Địa điểm: $location", style: const TextStyle(color: Colors.black54)),
+              // Các trường bổ sung có thể được thêm vào đây nếu cần
             ],
           ),
         ),
@@ -390,22 +262,27 @@ void _addComment(String dealId, String newComment) async {
     );
   }
 
-
-
-  Widget _buildQuickAccessButton(String label, IconData icon, Widget destination) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ListTile(
-        leading: Icon(icon),
-        title: Text(label),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => destination,
-            ),
-          );
-        },
+  Widget _buildQuickAccessButton(String title, IconData icon, Widget page) {
+    return ElevatedButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => page),
+        );
+      },
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.all(16.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Icon(icon, size: 30),
+          const SizedBox(width: 10),
+          Text(title, style: const TextStyle(fontSize: 18)),
+        ],
       ),
     );
   }

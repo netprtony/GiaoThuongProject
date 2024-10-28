@@ -134,6 +134,12 @@
       "languageVersion": "2.12"
     },
     {
+      "name": "intl",
+      "rootUri": "file:///C:/Users/USER/AppData/Local/Pub/Cache/hosted/pub.dev/intl-0.18.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "js",
       "rootUri": "file:///C:/Users/USER/AppData/Local/Pub/Cache/hosted/pub.dev/js-0.6.7",
       "packageUri": "lib/",
@@ -314,7 +320,7 @@
       "languageVersion": "3.5"
     }
   ],
-  "generated": "2024-10-25T03:41:57.817190Z",
+  "generated": "2024-10-28T08:22:57.028648Z",
   "generator": "pub",
   "generatorVersion": "3.5.3",
   "flutterRoot": "file:///E:/flutter",
