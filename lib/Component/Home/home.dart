@@ -10,7 +10,6 @@ import 'package:intl/intl.dart';
 class Home extends StatefulWidget {
   final String role;
   final String token;
-
   const Home({super.key, required this.role, required this.token});
 
   @override
@@ -18,160 +17,111 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  // Danh sách giao dịch
-  final List<Map<String, dynamic>> _transactions = [
-    {
-      'title': 'Bất động sản',
-      'content': 'Phú Mỹ Hưng',
-      'price': '15000',
-      'company': 'Vietsunco',
-      'star': 4,
-      'comments': <String>[],
-    },
-    {
-      'title': 'Công nghệ',
-      'content': 'Train App',
-      'price': '10000',
-      'company': 'Vietsunco',
-      'star': 5,
-      'comments': <String>[],
-    },
-    {
-      'title': 'Dịch vụ',
-      'content': 'Giao hàng nhanh',
-      'price': '8000',
-      'company': 'Vietsunco',
-      'star': 3,
-      'comments': <String>[],
-    },
-  ];
-
-  DealService dealService = DealService();
-  List<dynamic> deals = [];
+  Map<String, dynamic>? userInfo;
+  List<dynamic> _upcomingEvents = [];
+  Timer? _timer;
+  Timer? _timer2;
 
   @override
   void initState() {
     super.initState();
-    _fetchDeals();
-  }
-
-  void _fetchDeals() async {
-    List<dynamic> fetchedDeals = await dealService.getDeals();
-    setState(() {
-      deals = fetchedDeals;
+    _fetchUserInfo();
+    _fetchUpcomingEvents();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _fetchUserInfo();
+      _fetchUpcomingEvents();
+    });
+    _timer2 = Timer.periodic(const Duration(minutes: 30), (timer) {
+      // _autoCalculateTrainingPoint();
     });
   }
 
-  void _addDeal() async {
-    bool success = await dealService.createDeal(
-      'New Deal',
-      'This is a new deal',
-      100.0,
-      'Some Company',
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _timer2?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchUserInfo() async {
+    final response = await http.get(
+      Uri.parse('http://127.0.0.1:3000/api/auth/profile'),
+      headers: {
+        'Authorization': '${widget.token}',
+      },
     );
-
-    if (!mounted) return;
-
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Deal added successfully')),
-      );
-      _fetchDeals();
+    if (response.statusCode == 200) {
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      setState(() {
+        userInfo = data['result'];
+      });
     } else {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to add deal')),
+        const SnackBar(content: Text('Failed to load user info')),
       );
     }
   }
 
-  void _updateDeal(String dealId) async {
-    bool success = await dealService.updateDeal(
-      dealId,
-      'Updated Deal',
-      'Updated description',
-      150.0,
-      'Updated Company',
+  Future<void> _fetchUpcomingEvents() async {
+    final response = await http.get(
+      Uri.parse('http://127.0.0.1:3000/api/deals/list'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+      },
     );
+    if (response.statusCode == 200) {
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      final List<dynamic> allEvents = data['result'];
 
-    if (!mounted) return;
+      // Filter events to include only upcoming events
+      final DateFormat dateFormat = DateFormat('dd-MM-yyyy HH:mm');
+      final DateTime now = DateTime.now().toLocal();
+      final List<dynamic> upcomingEvents = allEvents.where((event) {
+        final DateTime eventStartDate = DateTime.parse(event['dateStart']).toLocal();
+        return now.isBefore(eventStartDate);
+      }).map((event) {
+        event['formattedDateStart'] = dateFormat.format(DateTime.parse(event['dateStart']).toLocal());
+        event['formattedDateEnd'] = dateFormat.format(DateTime.parse(event['dateEnd']).toLocal());
+        return event;
+      }).toList();
 
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Deal updated successfully')),
-      );
-      _fetchDeals();
+      setState(() {
+        _upcomingEvents = upcomingEvents;
+      });
     } else {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update deal')),
+        SnackBar(content: Text('Failed to load events: ${response.statusCode}')),
       );
     }
   }
 
-  void _deleteDeal(String dealId) async {
-    bool success = await dealService.deleteDeal(dealId);
 
-    if (!mounted) return;
-
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Deal deleted successfully')),
-      );
-      _fetchDeals();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to delete deal')),
-      );
-    }
-  }
-
-  void _addComment(String dealId, String newComment) async {
-    bool success = await dealService.addComment(dealId, newComment);
-
-    if (!mounted) return;
-
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Comment added successfully')),
-      );
-      _fetchDeals();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to add comment')),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Deal Management'),
-        centerTitle: true,
-        backgroundColor: Colors.orangeAccent,
-      ),
       body: Stack(
         children: [
-          // Gradient background
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color.fromARGB(255, 255, 200, 0),
-                  Color.fromARGB(255, 255, 140, 0),
+                  Color.fromARGB(255, 197, 216, 236),
+                  Color.fromARGB(255, 25, 117, 215),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
             ),
           ),
-          // Main content
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header with profile
                   Material(
                     elevation: 8,
                     borderRadius: BorderRadius.circular(10),
@@ -179,24 +129,23 @@ class _HomeState extends State<Home> {
                       padding: const EdgeInsets.symmetric(
                           vertical: 10.0, horizontal: 20.0),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withOpacity(0.8),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            "Dao Qui Mui",
-                            style: TextStyle(
+                            profile?['username'] ?? 'Loading...',
+                            style: const TextStyle(
                               color: Color.fromARGB(255, 25, 25, 25),
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.2,
                             ),
                           ),
-                          CircleAvatar(
-                            backgroundImage: AssetImage(
-                                'assets/images/person.png'),
+                          const CircleAvatar(
+                            backgroundImage: AssetImage('assets/avatar.png'),
                             radius: 25,
                             backgroundColor: Colors.white,
                           ),
@@ -205,41 +154,32 @@ class _HomeState extends State<Home> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // Body content
                   Expanded(
                     child: Row(
                       children: [
-                        // Event List
                         Expanded(
                           flex: 2,
                           child: Container(
                             padding: const EdgeInsets.all(16.0),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.7),
+                              color: Colors.white.withOpacity(0.5),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Danh sách giao dịch',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
                                 Expanded(
                                   child: ListView.builder(
-                                    itemCount: _transactions.length,
+                                    itemCount: _upcomingEvents.length,
                                     itemBuilder: (context, index) {
-                                      final transaction = _transactions[index];
+                                      final event = _upcomingEvents[index];
                                       return _buildEventCard(
-                                        transaction['_id'],
-                                        transaction['title'],
-                                        transaction['content'],
-                                        transaction['star'].toString(),
-                                        transaction['comments'] ?? [],
+                                        event,
+                                        event['title'] ?? 'Chưa cập nhật',
+                                        event['content'] ?? 'Chưa cập nhật',
+                                        event['price'] ?? 'Chưa cập nhật',
+                                        event['company'] ?? 'Chưa cập nhật',
+                                        event['createdBy'] ?? 'Chưa cập nhật',
                                       );
                                     },
                                   ),
@@ -249,7 +189,6 @@ class _HomeState extends State<Home> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        // Quick Access Grid
                         Expanded(
                           flex: 1,
                           child: Column(
@@ -259,57 +198,18 @@ class _HomeState extends State<Home> {
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
+                                    _buildQuickAccessButton(" Giao Dịch", Icons.event, EventListManagementScreen(role: widget.role, token: widget.token)),
                                     const SizedBox(height: 16),
-                                    _buildQuickAccessButton(
-                                      "Cài đặt",
-                                      Icons.settings,
-                                      SettingsScreen(token: widget.token),
-                                    ),
+                                    _buildQuickAccessButton("Thông báo", Icons.notifications, NotificationsPage(token: widget.token)),
+                                    const SizedBox(height: 16),
+                                    _buildQuickAccessButton(" Cài đặt", Icons.settings, SettingsScreen(token: widget.token)),
                                   ],
-                                ),
-                              ),
-                              // Status Overview
-                              Material(
-                                elevation: 10,
-                                borderRadius: BorderRadius.circular(10),
-                                child: Container(
-                                  padding: const EdgeInsets.all(16.0),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.9),
-                                    borderRadius: BorderRadius.circular(10),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 5),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Center(
-                                    child: Text(
-                                      'Tổng quan trạng thái',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                  // Nút Floating Action Button
-                  Positioned(
-                    bottom: 16,
-                    right: 16,
-                    child: FloatingActionButton(
-                      onPressed: _addDeal,
-                      child: const Icon(Icons.add),
-                      backgroundColor: Colors.orange,
                     ),
                   ),
                 ],
@@ -321,8 +221,8 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Widget _buildEventCard(String dealId, String title, String content, String star, List<String> comments) {
-    int starCount = int.tryParse(star) ?? 0;
+  Widget _buildEventCard(dynamic event, String title, String content, String price, String company, String createdBy) {
+    final DateFormat dateFormat = DateFormat('dd-MM-yyyy HH:mm'); // Define the date format
 
     return Card(
       shape: RoundedRectangleBorder(
@@ -340,25 +240,39 @@ class _HomeState extends State<Home> {
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
+                  color: Colors.black,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                content,
-                style: const TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('⭐ ' * starCount),
-                  IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () => _deleteDeal(dealId),
+              const SizedBox(height: 5),
+              Align(
+                alignment: Alignment.centerRight,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EventDetailsScreen(
+                          title: event['title'],
+                          content: event['content'],
+                          price: event['price'],
+                          company: event['company']
+                          createdBy: event['createdBy'],
+                          role: widget.role,
+                          token: widget.token,
+                          onUpdate: () => _fetchUpcomingEvents(),
+                        ),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
-                ],
+                  child: const Text("Xem chi tiết"),
+                ),
               ),
             ],
           ),
@@ -367,43 +281,25 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Widget _buildQuickAccessButton(String title, IconData icon, Widget navigateTo) {
-    return Material(
-      borderRadius: BorderRadius.circular(10),
-      elevation: 8,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => navigateTo),
-          );
-        },
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Icon(icon, size: 30, color: Colors.orange),
-              const SizedBox(width: 16),
-              Text(
-                title,
-                style: const TextStyle(fontSize: 18),
-              ),
-            ],
-          ),
+  Widget _buildQuickAccessButton(String label, IconData icon, Widget destination) {
+    return ElevatedButton.icon(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => destination),
+        );
+      },
+      icon: Icon(icon, color: Colors.black),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        elevation: 5,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        padding: const EdgeInsets.symmetric(vertical: 22),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
         ),
+        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
       ),
     );
   }
