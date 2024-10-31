@@ -1,5 +1,5 @@
-// Đảm bảo rằng bạn đã nhập đúng các thư viện cần thiết ở đầu file.
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:giaothuong/Component/Admin/dash_board_admin.dart';
 import 'package:giaothuong/Component/Home/home.dart';
 import 'package:giaothuong/Component/Home/signup.dart';
@@ -17,6 +17,7 @@ class LoginState extends State<Login> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   final LoginService _loginService = LoginService();
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   Future<void> _handleLogin() async {
     final username = _usernameController.text.trim();
@@ -39,19 +40,23 @@ class LoginState extends State<Login> {
           SnackBar(content: Text('Đăng nhập thành công. Vai trò: ${response.role}')),
         );
 
+        // Lưu token và role vào Secure Storage
+        await _storage.write(key: 'token', value: response.token);
+        await _storage.write(key: 'role', value: response.role);
+
         // Điều hướng dựa vào vai trò của người dùng
-        if (response.role == 'admin') {
+        if (response.role == 'ADMIN') {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => AdminDashboardScreen(role: response.role, token: response.token), // Thêm role và token
+              builder: (context) => AdminDashboardScreen(role: response.role, token: response.token), // Điều hướng đến trang admin
             ),
           );
         } else {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => Home(role: response.role, token: response.token),
+              builder: (context) => HomeScreen(), // Điều hướng đến HomeScreen cho người dùng bình thường
             ),
           );
         }
@@ -66,6 +71,7 @@ class LoginState extends State<Login> {
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

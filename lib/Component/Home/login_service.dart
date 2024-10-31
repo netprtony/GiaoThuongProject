@@ -26,7 +26,7 @@ class LoginService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   Future<LoginResponse?> login(String username, String password) async {
-    const String apiUrl = 'http://127.0.0.1:3000/api/auth/login';
+    const String apiUrl = 'http://192.168.0.108:3000/api/auth/login';
 
     final response = await http.post(
       Uri.parse(apiUrl),
@@ -35,7 +35,7 @@ class LoginService {
       },
       body: jsonEncode(<String, String>{
         'username': username,
-        'password': password, // Gửi mật khẩu gốc
+        'password': password,
       }),
     );
 
@@ -43,12 +43,12 @@ class LoginService {
       final Map<String, dynamic> data = jsonDecode(response.body);
       final loginResponse = LoginResponse.fromJson(data);
 
-      // Lưu token vào Secure Storage
+      // Lưu token và role vào Secure Storage
       await _storage.write(key: 'token', value: loginResponse.token);
+      await _storage.write(key: 'role', value: loginResponse.role);
 
       return loginResponse;
     } else {
-      // Phân tích lỗi từ phản hồi
       final Map<String, dynamic> errorData = jsonDecode(response.body);
       print("Lỗi đăng nhập: ${errorData['message']}");
       return null;

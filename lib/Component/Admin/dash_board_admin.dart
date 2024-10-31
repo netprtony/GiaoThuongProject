@@ -120,7 +120,7 @@ class AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.event),
-            label: 'Sự kiện',
+            label: 'Giao Dịch',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.people),
@@ -131,7 +131,7 @@ class AdminDashboardScreenState extends State<AdminDashboardScreen> {
         selectedItemColor: Colors.blue[700],
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed, // Ensures the bar does not shift
+        type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
       ),
     );
