@@ -363,7 +363,7 @@ class RegisterState extends State<Register> {
                           },
                           child: const Text(
                             'Đăng nhập',
-                            style: TextStyle(color: Colors.orange, fontSize: 16),
+                            style: TextStyle(color: Color.fromARGB(255, 4, 107, 192), fontSize: 16),
                           ),
                         ),
                       ],

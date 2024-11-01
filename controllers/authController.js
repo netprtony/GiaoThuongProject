@@ -76,7 +76,7 @@ exports.login = async (req, res) => {
 
     const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, { expiresIn: '1h' });
 
-    res.status(200).json({ message: 'Đăng nhập thành công', token });
+    res.status(200).json({ message: 'Đăng nhập thành công', token, role: user.userRoles});
   } catch (error) {
     res.status(500).json({ message: 'Đăng nhập thất bại', error: error.message });
   }
@@ -84,13 +84,29 @@ exports.login = async (req, res) => {
 
 // Lấy danh sách người dùng
 exports.listUsers = async (req, res) => {
+  // Giải mã token
+  const token = req.headers['authorization']?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ code: 1002, message: 'Unauthorized access' });
+  }
+
   try {
+    const decoded = jwt.verify(token, process.env.SECRET_KEY); // Giải mã token
+
+    // Sử dụng thông tin trong decoded để kiểm tra quyền truy cập
+    if (!decoded.userRoles || !decoded.userRoles.includes('ADMIN')) {
+      return res.status(403).json({ code: 1003, message: 'Forbidden: You do not have access to this resource' });
+    }
+
+    // Lấy danh sách người dùng
     const users = await User.find();
     res.json({ code: 1000, result: users });
   } catch (err) {
-    res.status(500).json({ code: 1001, message: 'Lỗi khi lấy danh sách người dùng' });
+    console.error(err); // Ghi log lỗi
+    return res.status(401).json({ code: 1002, message: 'Unauthorized access' });
   }
 };
+
 
 // Cập nhật vai trò của người dùng
 exports.updateUserRole = async (req, res) => {

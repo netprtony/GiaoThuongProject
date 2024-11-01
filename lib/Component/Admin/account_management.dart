@@ -49,6 +49,7 @@ class User {
 class UserManagementScreen extends StatefulWidget {
   final String role;
   final String token;
+
   const UserManagementScreen({super.key, required this.role, required this.token});
 
   @override
@@ -67,7 +68,7 @@ class UserManagementScreenState extends State<UserManagementScreen> {
   }
 
   Future<void> _updateUserRole(String username, String newRole) async {
-    final String url = 'http://127.0.0.1:3000/api/auth/updateRole/$username';
+    final String url = 'http://192.168.0.108:3000/api/auth/updateRole/$username';
     final response = await http.put(
       Uri.parse(url),
       headers: {
@@ -104,14 +105,14 @@ class UserManagementScreenState extends State<UserManagementScreen> {
   }
 
   Future<void> _fetchUsers() async {
-    const String url = 'http://127.0.0.1:3000/api/auth/listUsers';
+    const String url = 'http://192.168.0.108:3000/api/auth/listUsers';
     final response = await http.get(
       Uri.parse(url),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
       },
     );
-
+    
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(utf8.decode(response.bodyBytes));
       if (jsonResponse['code'] == 1000) {
@@ -294,17 +295,25 @@ class UserManagementScreenState extends State<UserManagementScreen> {
                             backgroundColor: const Color.fromARGB(255, 25, 117, 215),
                             child: Text(
                               user.name.isNotEmpty ? user.name[0] : '',
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                              style: const TextStyle(color: Colors.white),
                             ),
                           ),
-                          title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Roboto')),
-                          subtitle: Text(user.email, style: const TextStyle(fontFamily: 'Roboto')),
+                          title: Text(user.username),
+                          subtitle: Text('Quyền: ${user.userRoles.join(', ')}'),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.orange),
-                                onPressed: () => _showUserForm(user: user),
+                                icon: const Icon(Icons.edit),
+                                onPressed: () {
+                                  _showUserForm(user: user);
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () {
+                                  // Logic to delete user
+                                },
                               ),
                             ],
                           ),
@@ -318,15 +327,9 @@ class UserManagementScreenState extends State<UserManagementScreen> {
           ),
         ),
       ),
-      floatingActionButton: Material(
-        elevation: 10,
-        shadowColor: Colors.blueAccent,
-        shape: const CircleBorder(),
-        child: FloatingActionButton(
-          onPressed: () => _showUserForm(),
-          backgroundColor: Colors.white,
-          child: const Icon(Icons.add, color: Colors.black),
-        ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showUserForm(),
+        child: const Icon(Icons.add),
       ),
     );
   }

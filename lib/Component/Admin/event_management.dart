@@ -10,8 +10,6 @@ class Event {
   double price;
   String company;
   String username;
-  double rating;
-  String comments;
 
   Event({
     required this.eventID,
@@ -21,8 +19,6 @@ class Event {
     required this.price,
     required this.company,
     required this.username,
-    required this.rating,
-    required this.comments,
   });
 
   factory Event.fromJson(Map<String, dynamic> json) {
@@ -34,8 +30,6 @@ class Event {
       price: json['price'].toDouble(),
       company: json['company'],
       username: json['username'],
-      rating: json['rating'].toDouble(),
-      comments: json['comments'],
     );
   }
 }
@@ -43,7 +37,8 @@ class Event {
 class EventManagementScreen extends StatefulWidget {
   final String role;
   final String token;
-  const EventManagementScreen({super.key, required this.role, required this.token});
+  final String username; // Thêm thông tin username
+  const EventManagementScreen({super.key, required this.role, required this.token, required this.username});
 
   @override
   EventManagementScreenState createState() => EventManagementScreenState();
@@ -61,7 +56,7 @@ class EventManagementScreenState extends State<EventManagementScreen> {
   }
 
   Future<void> _updateEvent(Event event) async {
-    final String url = 'http://127.0.0.1:3000/api/deals/update/${event.eventID}';
+    final String url = 'http://192.168.0.108:3000/api/deals/update/${event.eventID}';
     final response = await http.put(
       Uri.parse(url),
       headers: {
@@ -74,9 +69,7 @@ class EventManagementScreenState extends State<EventManagementScreen> {
         'description': event.description,
         'price': event.price,
         'company': event.company,
-        'username': event.username,
-        'rating': event.rating,
-        'comments': event.comments,
+        'username': widget.username, // Lấy từ thông tin đăng nhập
       }),
     );
 
@@ -101,29 +94,46 @@ class EventManagementScreenState extends State<EventManagementScreen> {
   }
 
   Future<void> _fetchEvents() async {
-    const String url = 'http://127.0.0.1:3000/api/deals/list';
+  final String url = 'http://192.168.0.108:3000/api/deals/list';
+  
+  try {
     final response = await http.get(
       Uri.parse(url),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
       },
     );
-    if (response.statusCode == 200) {
-      final data = json.decode(utf8.decode(response.bodyBytes));
-      final List<Event> loadedEvents = (data['result'] as List)
-          .map((eventJson) => Event.fromJson(eventJson))
-          .toList();
 
-      setState(() {
-        events = loadedEvents;
-        filteredEvents = events;
-      });
+    if (response.statusCode == 200) {
+      // Giải mã dữ liệu và kiểm tra kiểu dữ liệu
+      final data = json.decode(utf8.decode(response.bodyBytes));
+      if (data['result'] is List) { 
+        final List<Event> loadedEvents = (data['result'] as List)
+            .map((eventJson) => Event.fromJson(eventJson))
+            .toList();
+
+        setState(() {
+          events = loadedEvents;
+          filteredEvents = events;
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Invalid data format')),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load events: ${response.statusCode}')),
       );
     }
+  } catch (e) {
+    // Bắt lỗi nếu có
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $e')),
+    );
   }
+}
+
 
   void _filterEvents(String query) {
     setState(() {
@@ -145,10 +155,10 @@ class EventManagementScreenState extends State<EventManagementScreen> {
             borderRadius: BorderRadius.circular(15),
           ),
           title: const Text(
-            "Xác nhận xóa sự kiện",
+            "Xác nhận xóa giao dịch",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
           ),
-          content: const Text("Bạn có chắc chắn muốn xóa sự kiện này không?"),
+          content: const Text("Bạn có chắc chắn muốn xóa giao dịch này không?"),
           actions: [
             TextButton(
               onPressed: () {
@@ -183,15 +193,12 @@ class EventManagementScreenState extends State<EventManagementScreen> {
     final descriptionController = TextEditingController(text: isEditing ? event.description : '');
     final priceController = TextEditingController(text: isEditing ? event.price.toString() : '');
     final companyController = TextEditingController(text: isEditing ? event.company : '');
-    final usernameController = TextEditingController(text: isEditing ? event.username : '');
-    final ratingController = TextEditingController(text: isEditing ? event.rating.toString() : '');
-    final commentsController = TextEditingController(text: isEditing ? event.comments : '');
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text(isEditing ? "Sửa sự kiện" : "Thêm sự kiện"),
+          title: Text(isEditing ? "Sửa giao dịch" : "Thêm giao dịch"),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -205,12 +212,6 @@ class EventManagementScreenState extends State<EventManagementScreen> {
                 _buildTextField(priceController, "Giá", keyboardType: TextInputType.number),
                 const SizedBox(height: 10),
                 _buildTextField(companyController, "Công ty"),
-                const SizedBox(height: 10),
-                _buildTextField(usernameController, "Người dùng"),
-                const SizedBox(height: 10),
-                _buildTextField(ratingController, "Số sao", keyboardType: TextInputType.number),
-                const SizedBox(height: 10),
-                _buildTextField(commentsController, "Bình luận"),
               ],
             ),
           ),
@@ -221,7 +222,7 @@ class EventManagementScreenState extends State<EventManagementScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
-                if (_validateForm(titleController, contentController, descriptionController, priceController, companyController, usernameController, ratingController, commentsController)) {
+                if (_validateForm(titleController, contentController, descriptionController, priceController, companyController)) {
                   if (isEditing) {
                     setState(() {
                       event.title = titleController.text;
@@ -229,22 +230,18 @@ class EventManagementScreenState extends State<EventManagementScreen> {
                       event.description = descriptionController.text;
                       event.price = double.parse(priceController.text);
                       event.company = companyController.text;
-                      event.username = usernameController.text;
-                      event.rating = double.parse(ratingController.text);
-                      event.comments = commentsController.text;
+                      event.username = widget.username; // Lấy từ thông tin đăng nhập
                     });
                     _updateEvent(event);
                   } else {
                     final newEvent = Event(
-                      eventID: DateTime.now().millisecondsSinceEpoch.toString(), // Temporary ID
+                      eventID: DateTime.now().millisecondsSinceEpoch.toString(),
                       title: titleController.text,
                       content: contentController.text,
                       description: descriptionController.text,
                       price: double.parse(priceController.text),
                       company: companyController.text,
-                      username: usernameController.text,
-                      rating: double.parse(ratingController.text),
-                      comments: commentsController.text,
+                      username: widget.username, // Lấy từ thông tin đăng nhập
                     );
                     _createEvent(newEvent);
                     await _fetchEvents();
@@ -264,8 +261,8 @@ class EventManagementScreenState extends State<EventManagementScreen> {
     );
   }
 
-  bool _validateForm(TextEditingController title, TextEditingController content, TextEditingController description, TextEditingController price, TextEditingController company, TextEditingController username, TextEditingController rating, TextEditingController comments) {
-    return title.text.isNotEmpty && content.text.isNotEmpty && description.text.isNotEmpty && price.text.isNotEmpty && company.text.isNotEmpty && username.text.isNotEmpty && rating.text.isNotEmpty && comments.text.isNotEmpty;
+  bool _validateForm(TextEditingController title, TextEditingController content, TextEditingController description, TextEditingController price, TextEditingController company) {
+    return title.text.isNotEmpty && content.text.isNotEmpty && description.text.isNotEmpty && price.text.isNotEmpty && company.text.isNotEmpty;
   }
 
   Widget _buildTextField(TextEditingController controller, String label, {TextInputType? keyboardType}) {
@@ -280,7 +277,7 @@ class EventManagementScreenState extends State<EventManagementScreen> {
   }
 
   Future<void> _createEvent(Event event) async {
-    final String url = 'http://127.0.0.1:3000/api/deals/create';
+    const String url = 'http://192.168.0.108:3000/api/deals/create';
     final response = await http.post(
       Uri.parse(url),
       headers: {
@@ -294,8 +291,6 @@ class EventManagementScreenState extends State<EventManagementScreen> {
         'price': event.price,
         'company': event.company,
         'username': event.username,
-        'rating': event.rating,
-        'comments': event.comments,
       }),
     );
 
@@ -307,17 +302,17 @@ class EventManagementScreenState extends State<EventManagementScreen> {
         filteredEvents = events;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tạo sự kiện thành công')),
+        const SnackBar(content: Text('Tạo giao dịch thành công')),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Tạo sự kiện thất bại: ${response.statusCode}')),
+        SnackBar(content: Text('Tạo giao dịch thất bại: ${response.statusCode}')),
       );
     }
   }
 
   Future<void> _deleteEvent(Event event) async {
-    final String url = 'http://127.0.0.1:3000/api/deals/delete/${event.eventID}';
+    final String url = 'http://192.168.0.108:3000/api/deals/delete/${event.eventID}';
     final response = await http.delete(
       Uri.parse(url),
       headers: {
@@ -327,15 +322,15 @@ class EventManagementScreenState extends State<EventManagementScreen> {
 
     if (response.statusCode == 200) {
       setState(() {
-        events.removeWhere((e) => e.eventID == event.eventID);
+        events.remove(event);
         filteredEvents = events;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Xóa sự kiện thành công')),
+        const SnackBar(content: Text('Xóa giao dịch thành công')),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Xóa sự kiện thất bại: ${response.statusCode}')),
+        SnackBar(content: Text('Xóa giao dịch thất bại: ${response.statusCode}')),
       );
     }
   }
@@ -344,56 +339,54 @@ class EventManagementScreenState extends State<EventManagementScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quản lý sự kiện'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _showEventForm(),
+        title: const Text("Quản lý giao dịch"),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: searchController,
+              decoration: const InputDecoration(
+                labelText: 'Tìm kiếm giao dịch',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: _filterEvents,
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: filteredEvents.length,
+              itemBuilder: (context, index) {
+                final event = filteredEvents[index];
+                return Card(
+                  margin: const EdgeInsets.all(8.0),
+                  child: ListTile(
+                    title: Text(event.title),
+                    subtitle: Text(event.content),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () => _showEventForm(event: event),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => _showLogoutDialog(context, event),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: searchController,
-              onChanged: _filterEvents,
-              decoration: const InputDecoration(
-                labelText: 'Tìm kiếm sự kiện',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16.0),
-            Expanded(
-              child: ListView.builder(
-                itemCount: filteredEvents.length,
-                itemBuilder: (context, index) {
-                  final event = filteredEvents[index];
-                  return Card(
-                    child: ListTile(
-                      title: Text(event.title),
-                      subtitle: Text(event.description),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () => _showEventForm(event: event),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () => _showLogoutDialog(context, event),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showEventForm(),
+        child: const Icon(Icons.add),
       ),
     );
   }

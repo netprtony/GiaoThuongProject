@@ -17,6 +17,8 @@ class LoginState extends State<Login> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   final LoginService _loginService = LoginService();
+  
+  // Định nghĩa FlutterSecureStorage
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   Future<void> _handleLogin() async {
@@ -36,27 +38,26 @@ class LoginState extends State<Login> {
       final response = await _loginService.login(username, password);
 
       if (response != null && response.token.isNotEmpty) {
+        // Lưu token vào FlutterSecureStorage
+        await _storage.write(key: 'token', value: response.token);
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Đăng nhập thành công. Vai trò: ${response.role}')),
         );
 
-        // Lưu token và role vào Secure Storage
-        await _storage.write(key: 'token', value: response.token);
-        await _storage.write(key: 'role', value: response.role);
-
         // Điều hướng dựa vào vai trò của người dùng
-        if (response.role == 'ADMIN') {
+        if (response.role.contains('ADMIN')) { // Kiểm tra nếu có 'ADMIN' trong danh sách vai trò
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => AdminDashboardScreen(role: response.role, token: response.token), // Điều hướng đến trang admin
+              builder: (context) => AdminDashboardScreen(role: 'ADMIN', token: response.token), 
             ),
           );
         } else {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => HomeScreen(), // Điều hướng đến HomeScreen cho người dùng bình thường
+              builder: (context) => HomeScreen(token: response.token, role: 'USER',), 
             ),
           );
         }
@@ -71,7 +72,6 @@ class LoginState extends State<Login> {
       );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {

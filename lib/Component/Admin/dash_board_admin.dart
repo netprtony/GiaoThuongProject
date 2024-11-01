@@ -68,7 +68,7 @@ class AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget build(BuildContext context) {
     final List<Widget> widgetOptions = <Widget>[
       UserManagementScreen(role: widget.role, token: widget.token), // Manage Users
-      EventManagementScreen(role: widget.role, token: widget.token), // Manage Events
+      EventManagementScreen(role: widget.role, token: widget.token, username: '',), // Manage Events
       EventListManagementScreen(role: widget.role, token: widget.token), // Manage Participants
     ];
 

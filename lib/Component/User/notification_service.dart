@@ -45,7 +45,7 @@ class NotificationService {
   }
 
   Future<void> markAllAsRead() async {
-    const url = 'http://127.0.0.1:3000/api/auth/markAllAsRead';
+    const url = 'http://192.168.0.108:3000/api/auth/markAllAsRead';
     final response = await http.put(
       Uri.parse(url),
       headers: {

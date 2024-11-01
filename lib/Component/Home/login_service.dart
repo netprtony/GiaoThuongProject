@@ -4,20 +4,20 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class LoginResponse {
   final String message;
-  final String role;
   final String token;
+  final List<String> role;
 
   const LoginResponse({
     required this.message,
-    required this.role,
     required this.token,
+    required this.role,
   });
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
     return LoginResponse(
       message: json['message'] ?? '',
-      role: json['role'] ?? 'user',
       token: json['token'] ?? '',
+      role: List<String>.from(json['role'] ?? []),
     );
   }
 }
@@ -45,7 +45,10 @@ class LoginService {
 
       // Lưu token và role vào Secure Storage
       await _storage.write(key: 'token', value: loginResponse.token);
-      await _storage.write(key: 'role', value: loginResponse.role);
+      await _storage.write(
+        key: 'role',
+        value: loginResponse.role.isNotEmpty ? loginResponse.role[0] : null,
+      );
 
       return loginResponse;
     } else {
