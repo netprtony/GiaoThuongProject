@@ -56,7 +56,7 @@ class EventManagementScreenState extends State<EventManagementScreen> {
   }
 
   Future<void> _updateEvent(Event event) async {
-    final String url = 'http://192.168.0.108:3000/api/deals/update/${event.eventID}';
+    final String url = 'http://192.168.1.67:3000/api/deals/update/${event.eventID}';
     final response = await http.put(
       Uri.parse(url),
       headers: {
@@ -94,7 +94,7 @@ class EventManagementScreenState extends State<EventManagementScreen> {
   }
 
   Future<void> _fetchEvents() async {
-  final String url = 'http://192.168.0.108:3000/api/deals/list';
+  final String url = 'http://192.168.1.67:3000/api/deals/list';
   
   try {
     final response = await http.get(
@@ -277,7 +277,7 @@ class EventManagementScreenState extends State<EventManagementScreen> {
   }
 
   Future<void> _createEvent(Event event) async {
-    const String url = 'http://192.168.0.108:3000/api/deals/create';
+    const String url = 'http://192.168.1.67:3000/api/deals/create';
     final response = await http.post(
       Uri.parse(url),
       headers: {
@@ -312,7 +312,7 @@ class EventManagementScreenState extends State<EventManagementScreen> {
   }
 
   Future<void> _deleteEvent(Event event) async {
-    final String url = 'http://192.168.0.108:3000/api/deals/delete/${event.eventID}';
+    final String url = 'http://192.168.1.67:3000/api/deals/delete/${event.eventID}';
     final response = await http.delete(
       Uri.parse(url),
       headers: {

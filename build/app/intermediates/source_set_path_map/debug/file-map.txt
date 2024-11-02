@@ -26,5 +26,6 @@ com.example.giaothuong.app-resValues-24 E:\DuAnKetNoiGiaoThuong\flutter\giaothuo
 com.example.giaothuong.app-packageDebugResources-25 E:\DuAnKetNoiGiaoThuong\flutter\giaothuong\build\app\intermediates\incremental\debug\packageDebugResources\merged.dir
 com.example.giaothuong.app-packageDebugResources-26 E:\DuAnKetNoiGiaoThuong\flutter\giaothuong\build\app\intermediates\incremental\debug\packageDebugResources\stripped.dir
 com.example.giaothuong.app-merged_res-27 E:\DuAnKetNoiGiaoThuong\flutter\giaothuong\build\app\intermediates\merged_res\debug
-com.example.giaothuong.app-packaged_res-28 E:\DuAnKetNoiGiaoThuong\flutter\giaothuong\build\flutter_secure_storage\intermediates\packaged_res\debug
-com.example.giaothuong.app-packaged_res-29 E:\DuAnKetNoiGiaoThuong\flutter\giaothuong\build\path_provider_android\intermediates\packaged_res\debug
+com.example.giaothuong.app-packaged_res-28 E:\DuAnKetNoiGiaoThuong\flutter\giaothuong\build\connectivity_plus\intermediates\packaged_res\debug
+com.example.giaothuong.app-packaged_res-29 E:\DuAnKetNoiGiaoThuong\flutter\giaothuong\build\flutter_secure_storage\intermediates\packaged_res\debug
+com.example.giaothuong.app-packaged_res-30 E:\DuAnKetNoiGiaoThuong\flutter\giaothuong\build\path_provider_android\intermediates\packaged_res\debug

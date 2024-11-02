@@ -7,7 +7,9 @@ import 'package:giaothuong/Component/Home/login.dart'; // Ensure correct imports
 class AdminDashboardScreen extends StatefulWidget {
   final String role;
   final String token;
-  const AdminDashboardScreen({super.key, required this.role, required this.token});
+  AdminDashboardScreen({Key? key, required this.role, required this.token}) : super(key: key) {
+    print('Admin Dashboard - Role: $role, Token: $token'); // Log ở đây
+  }
 
   @override
   AdminDashboardScreenState createState() => AdminDashboardScreenState();

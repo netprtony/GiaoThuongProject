@@ -5,7 +5,7 @@ import 'dart:convert';
 class RegisterService {
   Future<bool> register(String username, String password, String name, String phone, String company, String email, String address, String gender, String dob, String role) async {
     final response = await http.post(
-      Uri.parse('http://192.168.0.108:3000/api/auth/register'),
+      Uri.parse('http://192.168.1.67:3000/api/auth/register'),
       headers: {
         'Content-Type': 'application/json',
       },

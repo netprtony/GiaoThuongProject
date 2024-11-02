@@ -36,8 +36,8 @@ class LoginState extends State<Login> {
 
     try {
       final response = await _loginService.login(username, password);
-
-      if (response != null && response.token.isNotEmpty) {
+      print('Response: $response');
+      if (response != null && response.token.isNotEmpty && response.role != null) {
         // Lưu token vào FlutterSecureStorage
         await _storage.write(key: 'token', value: response.token);
 
@@ -46,18 +46,20 @@ class LoginState extends State<Login> {
         );
 
         // Điều hướng dựa vào vai trò của người dùng
-        if (response.role.contains('ADMIN')) { // Kiểm tra nếu có 'ADMIN' trong danh sách vai trò
+        if (response.role.contains('ADMIN')) {
+          print('Navigating to Admin Dashboard');
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => AdminDashboardScreen(role: 'ADMIN', token: response.token), 
+              builder: (context) => AdminDashboardScreen(role: 'ADMIN', token: response.token),
             ),
           );
         } else {
+          print('Navigating to Home Screen');
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => HomeScreen(token: response.token, role: 'USER',), 
+              builder: (context) => HomeScreen(token: response.token, role: 'USER'),
             ),
           );
         }
@@ -67,10 +69,11 @@ class LoginState extends State<Login> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Có lỗi xảy ra: $e')),
-      );
-    }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Có lỗi xảy ra: $e')),
+        );
+        print('Error: $e'); // Log lỗi để kiểm tra
+      }
   }
 
   @override

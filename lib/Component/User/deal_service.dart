@@ -2,7 +2,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class DealService {
-  final String apiUrl = 'http://192.168.0.108:3000/api/deals';
+  final String apiUrl = 'http://192.168.1.67:3000/api/deals';
 
   // Thêm deal mới
   Future<bool> createDeal(String title, String description, double price, String company) async {

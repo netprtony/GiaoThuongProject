@@ -1,4 +1,4 @@
-#Sat Nov 02 09:02:16 ICT 2024
+#Sat Nov 02 10:44:04 ICT 2024
 base.0=E\:\\DuAnKetNoiGiaoThuong\\flutter\\giaothuong\\build\\app\\intermediates\\dex\\debug\\mergeExtDexDebug\\classes.dex
 base.1=E\:\\DuAnKetNoiGiaoThuong\\flutter\\giaothuong\\build\\app\\intermediates\\dex\\debug\\mergeLibDexDebug\\0\\classes.dex
 base.2=E\:\\DuAnKetNoiGiaoThuong\\flutter\\giaothuong\\build\\app\\intermediates\\dex\\debug\\mergeProjectDexDebug\\0\\classes.dex

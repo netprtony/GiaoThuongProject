@@ -38,7 +38,7 @@ class UpdatePersonalScreen extends StatelessWidget {
           // Background Image
           Positioned.fill(
             child: Image.asset(
-              'assets/background.jpg', // replace with your image asset path
+              'assets/images/background.png', // replace with your image asset path
               fit: BoxFit.cover,
             ),
           ),
@@ -62,7 +62,7 @@ class UpdatePersonalScreen extends StatelessWidget {
                 // Profile avatar and name
                 const CircleAvatar(
                   radius: 40,
-                  backgroundImage: AssetImage('assets/person.png'), // Replace with your avatar image
+                  backgroundImage: AssetImage('assets/images/person.png'), // Replace with your avatar image
                 ),
                 const SizedBox(height: 10),
                 const Text(

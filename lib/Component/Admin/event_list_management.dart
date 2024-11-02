@@ -78,7 +78,7 @@ class EventListManagementScreenState extends State<EventListManagementScreen> {
   }
 
   Future<void> _fetchEvents() async {
-    const String url = 'http://127.0.0.1:3000/api/deal/listEvent';
+    const String url = 'http://192.168.1.67:3000/api/deal/listEvent';
     final response = await http.get(
       Uri.parse(url),
       headers: {
