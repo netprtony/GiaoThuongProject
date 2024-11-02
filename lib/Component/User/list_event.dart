@@ -22,7 +22,7 @@ class _ListEventScreenState extends State<ListEventScreen> {
   }
 
   Future<void> _fetchEvents() async {
-    final String url = 'http://192.168.0.108:3000/api/deals/list'; 
+    final String url = 'http://192.168.1.67:3000/api/deals/list'; 
     final response = await http.get(
       Uri.parse(url),
       headers: {
